@@ -82,8 +82,15 @@
   .ppin.selA{border-color:var(--orange); box-shadow:0 0 14px rgba(244,160,42,.6); background:#1a130a;}
   .ppin .ttl{font-size:12px; color:var(--gold);} .ppin.opp .ttl{color:var(--blue);}
   .ppin .cnt{float:right; color:var(--ink); font-size:11px;}
-  .icons{font-size:15px; line-height:1.7; margin-top:2px;}
-  .ic{cursor:help;} .ic.off{opacity:.28; filter:grayscale(1);}
+  .icons{font-size:15px; line-height:1.9; margin-top:2px;}
+  .ic{cursor:help; padding:0 1px;} .ic.off{opacity:.28; filter:grayscale(1);}
+  .ic.hit{background:rgba(127,224,160,.22); outline:1px solid var(--good); border-radius:3px;}
+  .ic.miss{background:rgba(224,127,127,.16); outline:1px solid rgba(224,127,127,.5); border-radius:3px;}
+  .chk{font-size:12px; font-weight:700; margin:0 1px;} .chk.y{color:var(--good);} .chk.n{color:var(--bad);}
+  .cnt.win{color:var(--good);}
+  .prev{font-size:11px; text-align:center; margin-top:3px; border:1px dashed #2a313c; padding:1px 2px; color:var(--blue);}
+  .prev.best{color:#0a0d12; background:var(--good); border-color:var(--good); font-weight:700;}
+  .prev.cur{color:var(--orange); border-color:var(--orange);}
   .side{font-size:10px; color:var(--dim);}
   .winglow{box-shadow:0 0 18px rgba(127,224,160,.45); border-color:var(--good)!important;}
   .facedown{display:flex; align-items:center; justify-content:center; min-height:38px; color:var(--dim); border:2px dashed #2c3340; background:#0c1118; font-size:16px;}
@@ -215,16 +222,17 @@
       default: return '?';
     }
   }
-  function ic(tip,glyph,off){ return '<span class="ic'+(off?' off':'')+'" data-tip="'+esc(tip)+'">'+glyph+'</span>'; }
-  function pinIcons(p){ return [
-    ic('大きさ '+p.size_mm+'mm','📏'+p.size_mm),
-    ic('透明感：'+TRJA[p.transparency],ICON.transparency[p.transparency]),
-    ic(p.hasText?'文字・記号あり':'文字・記号なし','🔠',!p.hasText),
-    ic(p.count==='multiple'?'複数（群れ）':'単体',ICON.count[p.count]),
-    ic(p.living?'生物':'無生物',p.living?'💚':'🔩'),
-    ic('絵柄：'+MOTJA[p.motif],ICON.motif[p.motif]),
-    ic('形：'+SHJA[p.shape],ICON.shape[p.shape]),
-    ic(p.symmetry?'左右対称':'非対称',p.symmetry?'🦋':'🍃'),
+  function matchInfo(pin,cust){ const green=new Set(),red=new Set(); if(pin&&cust){ cust.conditions.forEach(cd=>{ if(satisfies(pin,cd)) green.add(cd.axis); else red.add(cd.axis); }); red.forEach(a=>{ if(green.has(a)) red.delete(a); }); } return {green,red}; }
+  function axIc(tip,glyph,axis,info,off){ let cls='ic'+(off?' off':''); if(info){ if(info.green.has(axis)) cls+=' hit'; else if(info.red.has(axis)) cls+=' miss'; } return '<span class="'+cls+'" data-tip="'+esc(tip)+'">'+glyph+'</span>'; }
+  function pinIcons(p,info){ return [
+    axIc('大きさ '+p.size_mm+'mm','📏'+p.size_mm,'size_mm',info),
+    axIc('透明感：'+TRJA[p.transparency],ICON.transparency[p.transparency],'transparency',info),
+    axIc(p.hasText?'文字・記号あり':'文字・記号なし','🔠','hasText',info,!p.hasText),
+    axIc(p.count==='multiple'?'複数（群れ）':'単体',ICON.count[p.count],'count',info),
+    axIc(p.living?'生物':'無生物',p.living?'💚':'🔩','living',info),
+    axIc('絵柄：'+MOTJA[p.motif],ICON.motif[p.motif],'motif',info),
+    axIc('形：'+SHJA[p.shape],ICON.shape[p.shape],'shape',info),
+    axIc(p.symmetry?'左右対称':'非対称',p.symmetry?'🦋':'🍃','symmetry',info),
   ].join(' '); }
   function pinChips(p){ return '大'+p.size_mm+' / '+TRJA[p.transparency]+' / 文字'+(p.hasText?'有':'無')+' / '+(p.count==='multiple'?'複数':'単体')+' / '+(p.living?'生物':'無生')+' / '+MOTJA[p.motif]+' / '+SHJA[p.shape]+' / '+(p.symmetry?'対称':'非対'); }
 
@@ -311,18 +319,23 @@
       +'</div></div>';
   }
   function ppinBox(pin,pi,i,lead,n){
+    const cust=state.field[i].customer; const total=cust.conditions.length;
     const clickable = state.phase==='adjust' && state.adjustActive===pi && state.changesLeft[pi]>0;
     const selA = clickable && state.adjSel===i ? ' selA':'';
     const cls='ppin '+(pi===0?'me':'opp')+(lead?' lead':'')+(clickable?' click':'')+selA;
     const onclick = clickable?(' onclick="EM.selectAdjSlot('+i+')"'):'';
     const tip = pin?('商品：'+pin.name+'｜'+pinChips(pin)):'空き';
-    const head='<span class="cnt">満たした '+n+'</span><span class="ttl">'+(pin?'◇ '+esc(pin.name):'—')+'</span>';
-    const body=pin?('<div class="icons">'+pinIcons(pin)+'</div>'):'';
+    const info = pin?matchInfo(pin,cust):null;
+    const head='<span class="cnt'+(lead?' win':'')+'">'+n+' / '+total+'</span><span class="ttl">'+(pin?'◇ '+esc(pin.name):'—')+'</span>';
+    const body=pin?('<div class="icons">'+pinIcons(pin,info)+'</div>'):'';
     return '<div class="'+cls+'"'+onclick+' data-tip="'+esc(tip)+'"><div class="side">'+esc(pname(pi))+(state.adjustActive===pi&&state.phase==='adjust'?'（あなた）':'')+'</div>'+head+body+'</div>';
   }
-  function condChip(c,p0,p1){
-    const s0=p0&&satisfies(p0,c), s1=p1&&satisfies(p1,c);
-    return '<span class="cchip" data-tip="'+esc(condText(c))+'">'+condGlyph(c)+'<span class="dots"><span class="dot '+(s0?'y':'n')+'">●</span><span class="dot '+(s1?'y':'n')+'">●</span></span></span>';
+  function condChip(c,pins,focus){
+    const mk=s=>'<span class="chk '+(s?'y':'n')+'">'+(s?'✓':'✗')+'</span>';
+    let marks;
+    if(focus!=null){ marks=mk(pins[focus]&&satisfies(pins[focus],c)); }
+    else { marks='<span data-tip="'+esc(pname(0))+'">'+mk(pins[0]&&satisfies(pins[0],c))+'</span><span data-tip="'+esc(pname(1))+'">'+mk(pins[1]&&satisfies(pins[1],c))+'</span>'; }
+    return '<span class="cchip" data-tip="'+esc(condText(c))+'">'+condGlyph(c)+'<span class="dots">'+marks+'</span></span>';
   }
   function custMid(c){ return '<div class="cmid"><span class="tag '+c.rarity+'">'+c.rarity+'</span> <span class="coin" data-tip="この客の点＝獲得コイン">💰'+c.vp+'</span><div class="nm">'+esc(c.name)+'</div></div>'; }
 
@@ -383,18 +396,22 @@
     const oppExtra='<span class="note">残り変更 '+state.changesLeft[1]+'</span>';
     const meExtra ='<span class="note">残り変更 '+state.changesLeft[0]+'</span>';
     const opp=zoneBar(1, act===1, oppExtra);
+    const selSlot=state.adjSel; const selPin=(selSlot!=null)?state.field[selSlot].placed[act]:null;
+    let bestPrev=-1; if(selPin){ state.field.forEach(f=>{ const v=countSatisfied(selPin,f.customer); if(v>bestPrev) bestPrev=v; }); }
     const market='<div class="market">'+state.field.map((f,i)=>{
-      const c=f.customer; const pre=judgeCustomer(f.placed[0],f.placed[1],c,CFG); const lead=[pre.winner===0,pre.winner===1];
-      const reqs='<div class="creq">'+c.conditions.map(cd=>condChip(cd,f.placed[0],f.placed[1])).join('')+'</div>';
+      const c=f.customer; const total=c.conditions.length; const pre=judgeCustomer(f.placed[0],f.placed[1],c,CFG); const lead=[pre.winner===0,pre.winner===1];
+      const reqs='<div class="creq">'+c.conditions.map(cd=>condChip(cd,[f.placed[0],f.placed[1]],act)).join('')+'</div>';
       const stat = (pre.winner===0||pre.winner===1)?('<div class="center" style="font-size:12px"><span class="coin">'+esc(pname(pre.winner))+' 優勢</span></div>'):'<div class="center note">互角＝流れ</div>';
+      let prev='';
+      if(selPin){ const v=countSatisfied(selPin,c); const isSel=(i===selSlot); prev='<div class="prev'+(isSel?' cur':((v===bestPrev&&v>0)?' best':''))+'">'+(isSel?'⇄ 選択中（'+v+'/'+total+'）':'ここへ移すと '+v+'/'+total)+'</div>'; }
       return '<div class="mcard '+c.rarity+'"><div class="no">客'+(i+1)+'</div>'
         + ppinBox(f.placed[1],1,i,lead[1],pre.n1)
-        + custMid(c) + reqs + stat
+        + custMid(c) + reqs + stat + prev
         + ppinBox(f.placed[0],0,i,lead[0],pre.n0) + '</div>';
     }).join('')+'</div>';
     const me=zoneBar(0, act===0, meExtra);
-    const guide='<div class="note" style="margin:6px 0">客カードの上＝'+esc(pname(1))+'のピン／下＝'+esc(pname(0))+'のピン。'
-      +(state.changesLeft[act]>0?('<span class="coin">'+esc(pname(act))+'：自分の商品（'+(act===0?'下':'上')+'段）を2枚選ぶと位置を入れ替え（残り'+state.changesLeft[act]+'回）。'+(state.adjSel!=null?'1枚目選択中→もう1枚。':'')+'</span>'):'<span class="coin">'+esc(pname(act))+'：変更を使い切りました。パスしてください。</span>')+'</div>';
+    const guide='<div class="note" style="margin:6px 0">条件の <span class="chk y">✓</span>＝あなたの商品が合致／<span class="chk n">✗</span>＝不一致。商品の<span class="ic hit">緑枠</span>＝客が求めて合う特性／<span class="ic miss">赤枠</span>＝求められるが外している特性。'
+      +(state.changesLeft[act]>0?('<br><span class="coin">'+esc(pname(act))+'：自分の商品（'+(act===0?'下段':'上段')+'）を2枚選ぶと位置を入れ替え（残り'+state.changesLeft[act]+'回）。'+(state.adjSel!=null?'各客の「ここへ移すと x/y」を見て移動先を選ぶ。':'1枚目を選ぶと、各客への適性（x/y）が表示されます。')+'</span>'):'<span class="coin">'+esc(pname(act))+'：変更を使い切りました。パスしてください。</span>')+'</div>';
     const bar='<div class="topbar" style="margin-top:10px"><div class="note">両者が連続でパスすると判定に進みます</div><div style="display:flex;gap:8px">'
       +(state.adjSel!=null?'<button class="btn ghost" onclick="EM.cancelSel()">選択解除</button>':'')
       +'<button class="btn ghost" onclick="EM.resetGame()">リセット</button>'
@@ -407,7 +424,7 @@
     const head=topbar('判定確定');
     const opp=zoneBar(1,false,'<span class="note">獲得 '+state.players[1].acquired.length+'</span>');
     const market='<div class="market">'+state.field.map((f,i)=>{
-      const c=f.customer,r=f.result; const reqs='<div class="creq">'+c.conditions.map(cd=>condChip(cd,f.placed[0],f.placed[1])).join('')+'</div>';
+      const c=f.customer,r=f.result; const reqs='<div class="creq">'+c.conditions.map(cd=>condChip(cd,[f.placed[0],f.placed[1]],null)).join('')+'</div>';
       let verdict,cls='';
       if(r.winner===0||r.winner===1){ verdict='<span class="coin">'+esc(pname(r.winner))+' が獲得 (+'+c.vp+')</span>'; cls=' winglow'; }
       else if(r.winner==='both') verdict='<span class="coin">両者が獲得 (+'+c.vp+')</span>';
@@ -472,6 +489,7 @@
     add('得点：勝者にvp加算', (function(){ let coins=0; const r=judgeCustomer(pinA,pinB,cX,{tiebreak:'none'}); if(r.winner===0) coins+=cX.vp; return coins===1; })());
     add('入れ替えで勝敗が変わる', (function(){ const cA={vp:1,conditions:[{axis:'motif',op:'==',value:'animal'}]}; return countSatisfied(pinB,cA)===0 && countSatisfied(pinA,cA)===1; })());
     add('全アイコン定義あり', MOTIFS.every(m=>ICON.motif[m]) && TRANSP.every(x=>ICON.transparency[x]) && SHAPES.every(x=>ICON.shape[x]));
+    add('matchInfo 合致/不一致を判定', (function(){ const mi=matchInfo(pinA,{conditions:cX.conditions}); return mi.green.has('motif') && mi.green.has('size_mm') && mi.red.has('living'); })());
     const errs=validateData(D);
     add('validateData：仮データにエラー0件'+(errs.length?'（'+errs.length+'件）':''), errs.length===0);
     return {t,errs};
