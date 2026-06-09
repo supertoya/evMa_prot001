@@ -61,7 +61,14 @@
   .zone.me{border-color:rgba(244,160,42,.40);}
   .zone.active{box-shadow:0 0 16px rgba(244,160,42,.30); border-color:var(--orange);}
   .pname{font-size:14px;} .pname .turn{color:var(--orange);}
-  .market{display:grid; grid-template-columns:repeat(4,1fr); gap:10px;}
+  .market{display:grid; grid-template-columns:repeat(4,1fr); gap:10px; position:relative; padding:16px 12px 12px; border:2px solid #2c2620;
+    background:
+      radial-gradient(420px 130px at 28% -12%, rgba(127,214,232,.12), transparent 70%),
+      radial-gradient(420px 130px at 72% 112%, rgba(244,160,42,.12), transparent 70%),
+      repeating-linear-gradient(90deg, rgba(0,0,0,.20) 0 2px, rgba(255,255,255,.012) 2px 30px),
+      linear-gradient(180deg, #1b1712, #13100c);
+    box-shadow: inset 0 0 44px rgba(0,0,0,.6);}
+  .market::before{ content:'― 競りの卓 ―'; position:absolute; top:-10px; left:50%; transform:translateX(-50%); background:#13100c; padding:0 12px; font-size:11px; color:var(--dim); letter-spacing:.25em; border:1px solid #2c2620;}
   @media(max-width:780px){ .market{grid-template-columns:repeat(2,1fr);} }
   .mcard{border:2px solid var(--line); background:#0f1620; padding:7px; display:flex; flex-direction:column; gap:5px; position:relative;}
   .mcard.UC{border-color:rgba(127,214,232,.35); box-shadow:0 0 12px rgba(127,214,232,.10);}
@@ -91,6 +98,13 @@
   .prev{font-size:11px; text-align:center; margin-top:3px; border:1px dashed #2a313c; padding:1px 2px; color:var(--blue);}
   .prev.best{color:#0a0d12; background:var(--good); border-color:var(--good); font-weight:700;}
   .prev.cur{color:var(--orange); border-color:var(--orange);}
+  .tok{position:relative; display:inline-block; vertical-align:middle; line-height:0;}
+  .tok svg{position:absolute; left:0; top:0;}
+  .tok .motif{position:absolute; inset:0; display:flex; align-items:center; justify-content:center; line-height:1; text-shadow:0 1px 2px rgba(0,0,0,.6); white-space:nowrap;}
+  .tokwrap{display:flex; justify-content:center; padding:2px 0;}
+  .pinrow2{display:flex; align-items:center; gap:8px;}
+  .desire{display:flex; align-items:center; justify-content:center; gap:6px; margin-top:4px; padding:3px; border:1px dashed #2c3340; background:rgba(207,200,189,.03);}
+  .tok.ghost{opacity:.95;}
   .side{font-size:10px; color:var(--dim);}
   .winglow{box-shadow:0 0 18px rgba(127,224,160,.45); border-color:var(--good)!important;}
   .facedown{display:flex; align-items:center; justify-content:center; min-height:38px; color:var(--dim); border:2px dashed #2c3340; background:#0c1118; font-size:16px;}
@@ -235,25 +249,134 @@
     axIc(p.symmetry?'左右対称':'非対称',p.symmetry?'🦋':'🍃','symmetry',info),
   ].join(' '); }
   function pinChips(p){ return '大'+p.size_mm+' / '+TRJA[p.transparency]+' / 文字'+(p.hasText?'有':'無')+' / '+(p.count==='multiple'?'複数':'単体')+' / '+(p.living?'生物':'無生')+' / '+MOTJA[p.motif]+' / '+SHJA[p.shape]+' / '+(p.symmetry?'対称':'非対'); }
+  /* ピンを「8軸を見た目に埋め込んだ商品トークン」として描画（形=輪郭/大きさ=サイズ/透明感=透け/対称性=左右対称/絵柄=中央紋様/数=紋様の数/生物性=有機⇄金属/文字=刻印） */
+  function seedFromId(id){ let h=2166136261; for(let i=0;i<id.length;i++){ h^=id.charCodeAt(i); h=Math.imul(h,16777619); } return h>>>0; }
+  // 色相=絵柄カテゴリ／鮮やかさ・明度=生物性（生物=鮮やか・無生物=くすんだ金属調）
+  const HUE={animal:30,plant:110,person:332,food:52,object:215,nature:188,heraldry:275,vehicle:150,building:16};
+  function tokFill(m,l){ const h=HUE[m]!=null?HUE[m]:210; return 'hsl('+h+','+(l?42:18)+'%,'+(l?30:26)+'%)'; }
+  function tokStroke(m,l){ const h=HUE[m]!=null?HUE[m]:210; return 'hsl('+h+','+(l?62:24)+'%,'+(l?66:60)+'%)'; }
+  function pinTokenHTML(pin,px){ px=px||50; const cx=px/2,cy=px/2;
+    const r=(0.22*px)+((Math.max(10,Math.min(52,pin.size_mm))-10)/42)*(0.24*px);
+    const fill=tokFill(pin.motif,pin.living), stroke=tokStroke(pin.motif,pin.living);
+    const op=pin.transparency==='transparent'?0.18:pin.transparency==='translucent'?0.55:0.95;
+    let shape;
+    if(pin.shape==='circle') shape='<circle cx="'+cx+'" cy="'+cy+'" r="'+r.toFixed(1)+'"/>';
+    else if(pin.shape==='angular'){ const p=[]; for(let k=0;k<6;k++){const a=Math.PI/6+k*Math.PI/3; p.push((cx+r*Math.cos(a)).toFixed(1)+','+(cy+r*Math.sin(a)).toFixed(1));} shape='<polygon points="'+p.join(' ')+'"/>'; }
+    else { const rng=mulberry32(seedFromId(pin.id)); const p=[],n=9; for(let k=0;k<n;k++){const a=k*2*Math.PI/n-Math.PI/2; const rr=r*(0.62+0.38*rng()); p.push((cx+rr*Math.cos(a)).toFixed(1)+','+(cy+rr*Math.sin(a)).toFixed(1));} shape='<polygon points="'+p.join(' ')+'"/>'; }
+    const sheen=pin.transparency!=='opaque'?'<line x1="'+(cx-r*0.5).toFixed(1)+'" y1="'+(cy-r*0.15).toFixed(1)+'" x2="'+(cx-r*0.05).toFixed(1)+'" y2="'+(cy-r*0.6).toFixed(1)+'" stroke="#fff" stroke-width="1.6" opacity="0.45" stroke-linecap="round"/>':'';
+    const asym=!pin.symmetry?'<circle cx="'+(cx+r*0.7).toFixed(1)+'" cy="'+(cy-r*0.55).toFixed(1)+'" r="'+(px*0.055).toFixed(1)+'" fill="'+stroke+'"/>':'';
+    const rune=pin.hasText?'<text x="'+cx+'" y="'+(px-3)+'" font-size="'+(px*0.18).toFixed(0)+'" text-anchor="middle" fill="'+stroke+'" opacity="0.9">✶</text>':'';
+    const svg='<svg width="'+px+'" height="'+px+'" viewBox="0 0 '+px+' '+px+'"><g fill="'+fill+'" fill-opacity="'+op+'" stroke="'+stroke+'" stroke-width="2" stroke-linejoin="round">'+shape+'</g>'+sheen+asym+rune+'</svg>';
+    const g=ICON.motif[pin.motif];
+    const mf=pin.count==='multiple'?'<span class="motif" style="font-size:'+(px*0.24).toFixed(0)+'px;letter-spacing:-2px">'+g+g+g+'</span>':'<span class="motif" style="font-size:'+(px*0.4).toFixed(0)+'px">'+g+'</span>';
+    return '<span class="tok" style="width:'+px+'px;height:'+px+'px" data-tip="'+esc('商品：'+pin.name+'｜'+pinChips(pin))+'">'+svg+mf+'</span>';
+  }
+  /* 客が「ほしい品」のイメージをゴーストトークンで表示（形/透明感/絵柄/数を薄く描画。正確な条件は下の✓印） */
+  function desireTokenHTML(c,px){ px=px||46; const cx=px/2,cy=px/2,r=0.33*px;
+    const m={}; c.conditions.forEach(cd=>{ if(!m[cd.axis]) m[cd.axis]=cd; });
+    const sh=m.shape, shp=(sh&&sh.op==='==')?sh.value:null; let outline, dash='';
+    if(shp==='circle') outline='<circle cx="'+cx+'" cy="'+cy+'" r="'+r.toFixed(1)+'"/>';
+    else if(shp==='angular'){ const p=[]; for(let k=0;k<6;k++){const a=Math.PI/6+k*Math.PI/3;p.push((cx+r*Math.cos(a)).toFixed(1)+','+(cy+r*Math.sin(a)).toFixed(1));} outline='<polygon points="'+p.join(' ')+'"/>'; }
+    else if(shp==='irregular'){ const rng=mulberry32(seedFromId(c.id)); const p=[],n=9; for(let k=0;k<n;k++){const a=k*2*Math.PI/n-Math.PI/2;const rr=r*(0.62+0.38*rng());p.push((cx+rr*Math.cos(a)).toFixed(1)+','+(cy+rr*Math.sin(a)).toFixed(1));} outline='<polygon points="'+p.join(' ')+'"/>'; }
+    else { outline='<circle cx="'+cx+'" cy="'+cy+'" r="'+r.toFixed(1)+'"/>'; dash=' stroke-dasharray="3 3"'; }
+    const tr=m.transparency, op=(tr&&tr.op==='==')?(tr.value==='transparent'?0.12:tr.value==='translucent'?0.34:0.6):0.10;
+    const svg='<svg width="'+px+'" height="'+px+'" viewBox="0 0 '+px+' '+px+'"><g fill="#cfc8bd" fill-opacity="'+op+'" stroke="#cfc8bd" stroke-opacity="0.55" stroke-width="2" stroke-linejoin="round"'+dash+'>'+outline+'</g></svg>';
+    const mo=m.motif, cn=m.count, cluster=(cn&&cn.op==='=='&&cn.value==='multiple'); let motif;
+    if(mo && mo.op==='=='){ const g=ICON.motif[mo.value]; motif = cluster?('<span class="motif" style="font-size:'+(px*0.24)+'px;letter-spacing:-2px">'+g+g+g+'</span>'):('<span class="motif" style="font-size:'+(px*0.4)+'px">'+g+'</span>'); }
+    else if(mo && mo.op==='!='){ motif='<span class="motif" style="font-size:'+(px*0.3)+'px">'+ICON.motif[mo.value]+'🚫</span>'; }
+    else motif='<span class="motif" style="font-size:'+(px*0.34)+'px;opacity:.55">?</span>';
+    return '<span class="tok ghost" style="width:'+px+'px;height:'+px+'px" data-tip="この客がほしい品のイメージ（正確な条件は下の印）">'+svg+motif+'</span>';
+  }
 
   /* ---------- 状態 ---------- */
-  let state=null, sel=null, legendOpen=false;
+  let state=null, sel=null, legendOpen=false, resultsOpen=false, settingsOpen=false, howtoOpen=false, lastMode='hotseat';
+  function howtoBtn(){ return '<button class="btn ghost sm" onclick="EM.openHowto()">❓ 遊び方</button>'; }
+  function howtoModal(){
+    return '<div class="legend" onclick="EM.closeHowto()"><div class="box" onclick="event.stopPropagation()">'
+      +'<div style="display:flex;justify-content:space-between;align-items:center"><div class="big">❓ 遊び方（永遠闇市）</div><button class="btn ghost sm" onclick="EM.closeHowto()">閉じる ✕</button></div>'
+      +'<div class="note" style="margin:6px 0 10px">あなたは闇市の商人。客の望みに合う「商品(ピンズ)」を出し、条件をより多く満たした側がその客を獲得＝<span class="coin">コイン</span>。全'+S.turns+'ターン後、コインが多い方が勝ち。</div>'
+      +'<table><tbody>'
+      +'<tr><td>① 仕込み</td><td>客が見えない状態で、手持ちから商品を4つ選び①〜④に並べる（伏せ）。<b>いろいろな特性をバラけさせる</b>と、どんな客にも対応しやすい。</td></tr>'
+      +'<tr><td>② 公開</td><td>客が4枚出る。<b>陳列①＝客①…と位置で対応</b>して競う。</td></tr>'
+      +'<tr><td>③ 調整</td><td>先行→後攻の順に、<b>自分の商品2つの位置を入れ替え</b>（各自2回まで）。相手の出方を見て微調整。</td></tr>'
+      +'<tr><td>④ 判定</td><td>客の条件(下の印)を<b>多く満たした側がその客を獲得</b>。同点は流れ（⚙設定で変更可）。</td></tr>'
+      +'<tr><td>商品の見方</td><td>トークンの<b>形・大きさ・透け・中央の紋様・刻印</b>＝特性。<b>色＝絵柄の種類／鮮やか＝生物</b>。📖凡例に詳細、マウスを乗せると値が出ます。</td></tr>'
+      +'</tbody></table>'
+      +'<div class="center" style="margin-top:12px"><button class="btn primary sm" onclick="EM.closeHowto()">はじめる ▶</button></div>'
+      +'</div></div>';
+  }
+  /* ----- テスト記録（localStorageに自動蓄積・統計） ----- */
+  const RKEY='em_results_v1';
+  function loadResults(){ try{return JSON.parse(localStorage.getItem(RKEY)||'[]');}catch(e){return [];} }
+  function recordResult(){ try{ const p=state.players; const tal=pl=>{const t={C:0,UC:0,R:0};pl.acquired.forEach(c=>t[c.rarity]++);return t;};
+    const arr=loadResults(); arr.push({ts:new Date().toISOString().slice(0,16).replace('T',' '), seed:state.seed, c0:p[0].coins,c1:p[1].coins,a0:tal(p[0]),a1:tal(p[1]),w:p[0].coins>p[1].coins?0:(p[1].coins>p[0].coins?1:-1)});
+    localStorage.setItem(RKEY,JSON.stringify(arr)); }catch(e){} }
+  function resultsTSV(){ const a=loadResults(); let s='日時\tシード\tP1コイン\tP2コイン\t勝者\tP1獲得C/UC/R\tP2獲得C/UC/R\n';
+    a.forEach(r=>{ s+=r.ts+'\t'+(r.seed!=null?r.seed:'')+'\t'+r.c0+'\t'+r.c1+'\t'+(r.w===0?'P1':r.w===1?'P2':'引分')+'\t'+r.a0.C+'/'+r.a0.UC+'/'+r.a0.R+'\t'+r.a1.C+'/'+r.a1.UC+'/'+r.a1.R+'\n'; }); return s; }
+  function resultsBtn(){ return '<button class="btn ghost sm" onclick="EM.toggleResults()">📊 記録</button>'; }
+  function resultsModal(){ const a=loadResults(), n=a.length;
+    const w0=a.filter(r=>r.w===0).length,w1=a.filter(r=>r.w===1).length,dr=a.filter(r=>r.w===-1).length;
+    const mean=f=>n?(a.reduce((s,r)=>s+f(r),0)/n).toFixed(1):'-';
+    const body = n===0 ? '<div class="note">まだ記録がありません。対戦を最後まで遊ぶと自動で記録されます。</div>'
+      : '<table><tbody>'
+        +'<tr><td>試合数</td><td>'+n+'</td></tr>'
+        +'<tr><td>勝敗</td><td>プレイヤー1 '+w0+'勝 ／ プレイヤー2 '+w1+'勝 ／ 引分 '+dr+'</td></tr>'
+        +'<tr><td>平均コイン</td><td>P1 '+mean(r=>r.c0)+' ／ P2 '+mean(r=>r.c1)+'</td></tr>'
+        +'<tr><td>勝者/敗者 平均</td><td>勝者 '+mean(r=>Math.max(r.c0,r.c1))+' ／ 敗者 '+mean(r=>Math.min(r.c0,r.c1))+'</td></tr>'
+        +'<tr><td>直近5戦</td><td>'+a.slice(-5).reverse().map(r=>r.ts+'  P1 '+r.c0+' - '+r.c1+' P2 ('+(r.w===0?'P1':r.w===1?'P2':'分')+')').join('<br>')+'</td></tr>'
+        +'</tbody></table>';
+    return '<div class="legend" onclick="EM.toggleResults()"><div class="box" onclick="event.stopPropagation()">'
+      +'<div style="display:flex;justify-content:space-between;align-items:center"><div class="big">📊 テスト記録（コイン統計）</div><button class="btn ghost sm" onclick="EM.toggleResults()">閉じる ✕</button></div>'
+      +body
+      +(n?'<div style="margin-top:12px;display:flex;gap:8px"><button class="btn sm" onclick="EM.exportResults()">表で書き出し（コピー）</button><button class="btn ghost sm" onclick="EM.clearResults()">記録を消す</button></div>':'')
+      +'</div></div>';
+  }
+  /* ----- 設定（テスト用・localStorageに保存） ----- */
+  const SKEY='em_settings_v1';
+  function defaultSettings(){ return { startingCoins:CFG.startingCoins, turns:CFG.turns, tiebreak:CFG.tiebreak, randomSeed:CFG.randomSeed!==false, deckMode:'normal', firstMover:'alternate' }; }
+  function loadSettings(){ try{return JSON.parse(localStorage.getItem(SKEY)||'{}');}catch(e){return {};} }
+  function saveSettings(o){ try{localStorage.setItem(SKEY,JSON.stringify(o));}catch(e){} }
+  let S = Object.assign(defaultSettings(), loadSettings());
+  S.turns = Math.min(S.turns||CFG.turns, Math.floor(CFG.pinsPerPlayer/CFG.pinsPerTurn)); // ピン枯渇によるソフトロック防止
+  function jsv(v){ return typeof v==='string'?("'"+v+"'"):String(v); }
+  function settingsBtn(){ return '<button class="btn ghost sm" onclick="EM.toggleSettings()">⚙ 設定</button>'; }
+  function optRow(label,key,opts){ return '<tr><td>'+label+'</td><td>'+opts.map(o=>'<button class="btn sm '+(S[key]===o.v?'primary':'ghost')+'" onclick="EM.setSetting(\''+key+'\','+jsv(o.v)+')">'+o.label+'</button>').join(' ')+'</td></tr>'; }
+  function settingsModal(){
+    return '<div class="legend" onclick="EM.toggleSettings()"><div class="box" onclick="event.stopPropagation()">'
+      +'<div style="display:flex;justify-content:space-between;align-items:center"><div class="big">⚙ 設定（テスト用）</div><button class="btn ghost sm" onclick="EM.toggleSettings()">閉じる ✕</button></div>'
+      +'<div class="note" style="margin:6px 0">変更は「この設定で新規対戦」か次の対戦から有効。設定はこの端末に保存されます。</div>'
+      +'<table><tbody>'
+      +optRow('種銭（開始コイン）','startingCoins',[{v:0,label:'0'},{v:3,label:'3'},{v:5,label:'5'},{v:8,label:'8'}])
+      +optRow('ターン数','turns',[{v:3,label:'3'},{v:5,label:'5'}])
+      +optRow('同点客','tiebreak',[{v:'none',label:'流れ'},{v:'split',label:'折半'},{v:'both',label:'両取り'}])
+      +optRow('展開','randomSeed',[{v:true,label:'毎回ランダム'},{v:false,label:'固定シード'}])
+      +optRow('デッキ','deckMode',[{v:'normal',label:'通常(左右別)'},{v:'mirror',label:'ミラー(同一)'}])
+      +optRow('先行','firstMover',[{v:'alternate',label:'毎ターン交代'},{v:'trailing',label:'劣勢側が先行'},{v:'fixed',label:'P1固定'}])
+      +'</tbody></table>'
+      + ((S.deckMode==='mirror' && (S.tiebreak==='both'||S.firstMover==='fixed')) ? '<div class="note" style="color:var(--bad);margin-top:8px">⚠ ミラー＋'+(S.tiebreak==='both'?'両取り':'')+((S.tiebreak==='both'&&S.firstMover==='fixed')?'・':'')+(S.firstMover==='fixed'?'P1固定':'')+' は退化的になりやすい組合せ（毎回引分／先行が圧勝）。避けるのが無難です。</div>' : '')
+      +'<div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap"><button class="btn primary sm" onclick="EM.newWithSettings()">この設定で新規対戦 ▶</button><button class="btn sm" onclick="EM.applyFairPreset()">⚖ 公平比較プリセット</button><button class="btn ghost sm" onclick="EM.resetSettings()">既定に戻す</button></div>'
+      +'<div class="note" style="margin-top:4px">公平比較＝ミラー＋劣勢先行＋折半（デッキ差・先行偏りを抑えて腕と運を比較）。</div>'
+      +'</div></div>';
+  }
   function instPins(ids){ const m={}; return ids.map(id=>{ const def=D.PIN_POOL.find(p=>p.id===id); m[id]=(m[id]||0)+1; return Object.assign({},def,{iid:id+'#'+m[id]}); }); }
   function instCustomers(ids){ const m={}; return ids.map(id=>{ const def=D.CUSTOMER_POOL.find(c=>c.id===id); m[id]=(m[id]||0)+1; return Object.assign({},def,{iid:id+'#'+m[id]}); }); }
-  function newGame(){
-    const rng=mulberry32(CFG.rngSeed);
-    const mk=(pid,name)=>({ id:pid, name, coins:CFG.startingCoins,
-      supply:instPins(D.PRESET_DECKS[pid].pins),
-      customerDeck:shuffle(instCustomers(D.PRESET_DECKS[pid].customers),rng), acquired:[], stock:[] });
-    state={ turn:0, phase:null, field:[], players:[mk('p0','プレイヤー1'),mk('p1','プレイヤー2')] };
+  function newGame(mode){
+    lastMode = mode||'hotseat';
+    const seed = S.randomSeed ? Math.floor(Math.random()*1e9) : CFG.rngSeed;
+    const rng=mulberry32(seed);
+    const deckOf = pid => (S.deckMode==='mirror') ? 'p0' : pid;
+    const mk=(pid,name)=>({ id:pid, name, coins:S.startingCoins,
+      supply:instPins(D.PRESET_DECKS[deckOf(pid)].pins),
+      customerDeck:shuffle(instCustomers(D.PRESET_DECKS[deckOf(pid)].customers),rng), acquired:[], stock:[] });
+    state={ turn:0, phase:null, field:[], mode:lastMode, seed:seed, players:[mk('p0','プレイヤー1'),mk('p1', lastMode==='ai'?'AI':'プレイヤー2')] };
     nextTurnStart();
   }
   function nextTurnStart(){
     state.turn++;
-    if(state.turn>CFG.turns){ state.phase='gameover'; render(); return; }
+    if(state.turn>S.turns){ state.phase='gameover'; recordResult(); render(); return; }
     state.field=[]; state.stockStep=0; sel=null;
     state.players.forEach(p=>{ p.stock=new Array(NPINS).fill(null); });
-    state.phase='stockHandoff'; render();
+    state.phase = (state.mode==='ai') ? 'stock' : 'stockHandoff'; render(); // ソロは相手に隠す必要がないので直接仕込みへ
   }
   /* ----- 仕込み ----- */
   const stockP=()=>state.stockStep;
@@ -267,33 +390,59 @@
   function stockReset(){ const p=stockP(); state.players[p].stock=new Array(NPINS).fill(null); sel=null; render(); }
   const stockReady=()=>state.players[stockP()].stock.every(Boolean);
   function stockConfirm(){ if(!stockReady()) return;
-    if(state.stockStep===0){ state.stockStep=1; sel=null; state.phase='stockHandoff'; render(); } else revealAndAdjust(); }
+    if(state.stockStep===0){
+      if(state.mode==='ai'){ aiStock(1); revealAndAdjust(); }                 // ソロ：AIが自動で仕込む→公開
+      else { state.stockStep=1; sel=null; state.phase='stockHandoff'; render(); }
+    } else revealAndAdjust(); }
+  /* ----- AI（ソロ用・ルールベース貪欲。エンジンは読み取り専用） ----- */
+  let _aiUse=null;
+  function aiUsefulness(p){ if(!_aiUse) _aiUse={}; if(_aiUse[p.id]!=null) return _aiUse[p.id]; let s=0; D.CUSTOMER_POOL.forEach(c=>s+=countSatisfied(p,c)); return _aiUse[p.id]=s/D.CUSTOMER_POOL.length; }
+  function aiStock(p){ const sup=stockAvail(p).slice().sort((a,b)=>aiUsefulness(b)-aiUsefulness(a)); state.players[p].stock=sup.slice(0,NPINS); }
+  function aiWonVP(p){ let v=0; state.field.forEach(f=>{ const r=judgeCustomer(f.placed[0],f.placed[1],f.customer,S); if(r.winner===p||r.winner==='both') v+=f.customer.vp; else if(r.winner==='split') v+=Math.ceil(f.customer.vp/2); }); return v; }
+  function aiBestSwap(p){ const base=aiWonVP(p); let best=null,bg=0,F=state.field; for(let i=0;i<F.length;i++)for(let j=i+1;j<F.length;j++){ const t=F[i].placed[p];F[i].placed[p]=F[j].placed[p];F[j].placed[p]=t; const g=aiWonVP(p)-base; const u=F[i].placed[p];F[i].placed[p]=F[j].placed[p];F[j].placed[p]=u; if(g>bg){bg=g;best={i,j};} } return best; }
+  function aiTakeTurn(){ if(state.changesLeft[1]<=0){ state.passStreak++; return; } const sw=aiBestSwap(1); if(sw){ const t=state.field[sw.i].placed[1]; state.field[sw.i].placed[1]=state.field[sw.j].placed[1]; state.field[sw.j].placed[1]=t; state.changesLeft[1]--; state.passStreak=0; } else state.passStreak++; }
+
   /* ----- 公開＋調整 ----- */
   function revealAndAdjust(){
     state.field=[];
     for(let p=0;p<2;p++) for(let k=0;k<CFG.customersPresentedPerPlayer;k++){ const c=state.players[p].customerDeck.shift(); if(c) state.field.push({customer:c,placed:[null,null],result:null}); }
     for(let i=0;i<state.field.length;i++) for(let p=0;p<2;p++) state.field[i].placed[p]=state.players[p].stock[i]||null;
-    state.firstThisTurn=(state.turn-1)%2; state.adjustActive=state.firstThisTurn;
+    let first; const c0=state.players[0].coins,c1=state.players[1].coins;
+    if(S.firstMover==='fixed') first=0;
+    else if(S.firstMover==='trailing') first=(c0<c1?0:(c1<c0?1:(state.turn-1)%2));
+    else first=(state.turn-1)%2;
+    state.firstThisTurn=first; state.adjustActive=first;
     state.changesLeft=[ADJ_MAX,ADJ_MAX]; state.passStreak=0; state.adjSel=null;
-    state.phase='adjust'; render();
+    state.phase='adjust'; adjKickoff();
   }
   function selectAdjSlot(i){ const p=state.adjustActive; if(state.changesLeft[p]<=0) return;
     if(state.adjSel==null){ state.adjSel=i; render(); return; }
     if(state.adjSel===i){ state.adjSel=null; render(); return; }
     const a=state.adjSel,b=i,t=state.field[a].placed[p]; state.field[a].placed[p]=state.field[b].placed[p]; state.field[b].placed[p]=t;
-    state.changesLeft[p]--; state.adjSel=null; state.passStreak=0; adjEndOrNext(); }
-  function adjPass(){ state.adjSel=null; state.passStreak++; adjEndOrNext(); }
-  function adjEndOrNext(){
-    if(state.passStreak>=2 || (state.changesLeft[0]<=0 && state.changesLeft[1]<=0)){ doReveal(); return; }
-    state.adjustActive=1-state.adjustActive; state.adjSel=null;
-    if(state.changesLeft[state.adjustActive]<=0){ state.passStreak++; adjEndOrNext(); return; }
+    state.changesLeft[p]--; state.adjSel=null; state.passStreak=0; adjAfterMove(); }
+  function adjPass(){ state.adjSel=null; state.passStreak++; adjAfterMove(); }
+  function adjEnded(){ return state.passStreak>=2 || (state.changesLeft[0]<=0 && state.changesLeft[1]<=0); }
+  function adjAfterMove(){ // 直前の手（入替/パス）でpassStreak更新済み → 手番交代しAI/自動パスを進め、人間の番か終了で止める
+    while(true){
+      if(adjEnded()){ doReveal(); return; }
+      state.adjustActive = 1-state.adjustActive; state.adjSel=null;
+      const a=state.adjustActive;
+      if(state.changesLeft[a]<=0){ state.passStreak++; continue; }       // 変更切れ→自動パス、再度交代
+      if(state.mode==='ai' && a===1){ aiTakeTurn(); continue; }          // AIが打つ→ループで人間へ交代
+      render(); return;                                                  // 人間の番
+    }
+  }
+  function adjKickoff(){ // 調整開始時：先行がAIなら打たせる／人間なら描画して待つ
+    const a=state.adjustActive;
+    if(state.changesLeft[a]<=0){ adjAfterMove(); return; }
+    if(state.mode==='ai' && a===1){ aiTakeTurn(); adjAfterMove(); return; }
     render();
   }
   function doReveal(){
-    state.field.forEach(f=>{ const r=judgeCustomer(f.placed[0],f.placed[1],f.customer,CFG); f.result=r;
+    state.field.forEach(f=>{ const r=judgeCustomer(f.placed[0],f.placed[1],f.customer,S); f.result=r;
       if(r.winner===0||r.winner===1){ const pl=state.players[r.winner]; pl.coins+=f.customer.vp; pl.acquired.push(f.customer); }
-      else if(r.winner==='both'){ state.players[0].coins+=f.customer.vp; state.players[1].coins+=f.customer.vp; }
-      else if(r.winner==='split'){ const h=Math.floor(f.customer.vp/2); state.players[0].coins+=h; state.players[1].coins+=h; } });
+      else if(r.winner==='both'){ const v=f.customer.vp; state.players[0].coins+=v; state.players[1].coins+=v; state.players[0].acquired.push(f.customer); state.players[1].acquired.push(f.customer); }
+      else if(r.winner==='split'){ const h=Math.ceil(f.customer.vp/2); state.players[0].coins+=h; state.players[1].coins+=h; state.players[0].acquired.push(f.customer); state.players[1].acquired.push(f.customer); } });
     state.phase='reveal'; render();
   }
   function nextTurn(){ for(let p=0;p<2;p++){ const used=new Set(state.field.map(f=>f.placed[p]).filter(Boolean).map(x=>x.iid)); state.players[p].supply=state.players[p].supply.filter(pin=>!used.has(pin.iid)); } nextTurnStart(); }
@@ -305,6 +454,7 @@
     return '<div class="legend" onclick="EM.toggleLegend()"><div class="box" onclick="event.stopPropagation()">'
       +'<div class="hdr" style="display:flex;justify-content:space-between"><div class="big">凡例（アイコンの意味）</div><button class="btn ghost sm" onclick="EM.toggleLegend()">閉じる ✕</button></div>'
       +'<table><tbody>'
+      +'<tr><td>商品トークン</td><td>輪郭＝<b>形</b>／大きさ＝<b>サイズ</b>／透け＝<b>透明感</b>／左右対称＝<b>対称性</b>／中央の紋様＝<b>絵柄</b>／紋様の数＝<b>単体/複数</b>／<b>色相＝絵柄の種類</b>・<b>鮮やか＝生物/くすみ＝無生物</b>／刻印 <b>✶</b>＝文字記号あり。商品にマウスを乗せると正確な値が出ます。</td></tr>'
       +'<tr><td>大きさ</td><td><span class="glyph">📏</span> ＋数字（mm）。条件は <b>≥</b>=以上 / <b>≤</b>=以下</td></tr>'
       +'<tr><td>透明感</td><td><span class="glyph">💎</span>透明 ／ <span class="glyph">🌫️</span>半透明 ／ <span class="glyph">⬛</span>不透明</td></tr>'
       +'<tr><td>文字・記号</td><td><span class="glyph">🔠</span>あり（薄い表示＝なし）</td></tr>'
@@ -325,9 +475,8 @@
     const cls='ppin '+(pi===0?'me':'opp')+(lead?' lead':'')+(clickable?' click':'')+selA;
     const onclick = clickable?(' onclick="EM.selectAdjSlot('+i+')"'):'';
     const tip = pin?('商品：'+pin.name+'｜'+pinChips(pin)):'空き';
-    const info = pin?matchInfo(pin,cust):null;
     const head='<span class="cnt'+(lead?' win':'')+'">'+n+' / '+total+'</span><span class="ttl">'+(pin?'◇ '+esc(pin.name):'—')+'</span>';
-    const body=pin?('<div class="icons">'+pinIcons(pin,info)+'</div>'):'';
+    const body=pin?('<div class="tokwrap">'+pinTokenHTML(pin,52)+'</div>'):'';
     return '<div class="'+cls+'"'+onclick+' data-tip="'+esc(tip)+'"><div class="side">'+esc(pname(pi))+(state.adjustActive===pi&&state.phase==='adjust'?'（あなた）':'')+'</div>'+head+body+'</div>';
   }
   function condChip(c,pins,focus){
@@ -337,25 +486,25 @@
     else { marks='<span data-tip="'+esc(pname(0))+'">'+mk(pins[0]&&satisfies(pins[0],c))+'</span><span data-tip="'+esc(pname(1))+'">'+mk(pins[1]&&satisfies(pins[1],c))+'</span>'; }
     return '<span class="cchip" data-tip="'+esc(condText(c))+'">'+condGlyph(c)+'<span class="dots">'+marks+'</span></span>';
   }
-  function custMid(c){ return '<div class="cmid"><span class="tag '+c.rarity+'">'+c.rarity+'</span> <span class="coin" data-tip="この客の点＝獲得コイン">💰'+c.vp+'</span><div class="nm">'+esc(c.name)+'</div></div>'; }
+  function custMid(c){ return '<div class="cmid"><div><span class="tag '+c.rarity+'">'+c.rarity+'</span> <span class="coin" data-tip="この客の点＝獲得コイン">💰'+c.vp+'</span></div><div class="nm">'+esc(c.name)+'</div><div class="desire"><span class="side">ほしい品 ▸</span>'+desireTokenHTML(c,46)+'</div></div>'; }
 
   /* ---------- 画面 ---------- */
   function titleScreen(){
-    return '<div class="topbar"><div class="sub">EVER MARKET — PROTOTYPE</div>'+legendBtn()+'</div>'
+    return '<div class="topbar"><div class="sub">EVER MARKET — PROTOTYPE</div>'+howtoBtn()+legendBtn()+resultsBtn()+settingsBtn()+'</div>'
       +'<div class="center" style="padding:30px 0">'
       +'<div class="title-em" style="margin:6px 0">永遠闇市</div>'
       +'<div class="sub" style="margin-bottom:24px">月の消える夜、決闘競売 — Phase&nbsp;1（コア）</div>'
-      +'<button class="btn primary big" onclick="EM.startMatch()">2人で対戦をはじめる</button>'
+      +'<button class="btn primary big" onclick="EM.startMatch(\'hotseat\')">2人で対戦</button> <button class="btn big" onclick="EM.startMatch(\'ai\')">1人でAI対戦</button>'
       +'<div class="note" style="margin-top:24px; max-width:600px; display:inline-block; text-align:left">'
       +'・盤面は<b>TCG風</b>（上＝相手の陳列／中央＝客の卓／下＝自分）。<br>'
       +'・<b>仕込み</b>：客が見えない状態で商品（ピンズ）を4つ選び①〜④に並べる（伏せ・交代）。<br>'
       +'・<b>公開→調整</b>：客4枚が出て位置で対応。先行→後攻の順に自分のピン2つを入れ替え（各自2回・先行は毎ターン交代）。<br>'
       +'・条件/特性は<b>アイコン表示</b>。マウスを乗せると詳細、<b>📖凡例</b>で一覧。<br>'
-      +'・<b>判定</b>：条件を多く満たした側が客を獲得＝<span class="coin">コイン</span>。同点は流れ。全'+CFG.turns+'ターン後コインが多い方が勝者。'
+      +'・<b>判定</b>：条件を多く満たした側が客を獲得＝<span class="coin">コイン</span>。同点は流れ。全'+S.turns+'ターン後コインが多い方が勝者。'
       +'</div>'
       +'<div class="note" style="margin-top:16px"><a href="?test">▶ セルフテストを実行</a></div></div>';
   }
-  function topbar(label){ return '<div class="topbar"><div class="sub">ターン '+state.turn+' / '+CFG.turns+' ・ '+label+'</div>'+legendBtn()+'</div>'; }
+  function topbar(label){ return '<div class="topbar"><div class="sub">ターン '+state.turn+' / '+S.turns+' ・ '+label+' <span class="pill" data-tip="全ターン終了時にコインが多い方が勝ち">🏆 勝利条件：最終コイン最多</span></div>'+howtoBtn()+legendBtn()+resultsBtn()+settingsBtn()+'</div>'; }
   function zoneBar(pi,active,extra){
     return '<div class="zone '+(pi===0?'me':'opp')+(active?' active':'')+'"><div class="pname">'+(active?'<span class="turn">▶ </span>':'')+esc(pname(pi))+(active?' の番':'')+'</div><div class="scorebar"><span class="coin">🪙 '+state.players[pi].coins+'</span>'+(extra||'')+'</div></div>';
   }
@@ -375,18 +524,18 @@
     const market='<div class="market">'+state.players[p].stock.map((pin,i)=>{
       const top='<div class="facedown" data-tip="客は公開後に分かります">❓ <span class="side" style="margin-left:6px">未公開の客</span></div>';
       const slot = pin
-        ? '<div class="ppin me click" onclick="EM.stockRemoveAt('+i+')" data-tip="クリックで戻す"><span class="ttl">◇ '+esc(pin.name)+'</span><div class="icons">'+pinIcons(pin)+'</div></div>'
+        ? '<div class="ppin me click" onclick="EM.stockRemoveAt('+i+')" data-tip="クリックで戻す"><div class="pinrow2">'+pinTokenHTML(pin,44)+'<span class="ttl">◇ '+esc(pin.name)+'</span></div></div>'
         : '<div class="dempty" onclick="EM.stockPlaceAt('+i+')">'+(sel!=null?'ここに置く ▼':'下のピンを選ぶ')+'</div>';
       return '<div class="mcard"><div class="no">陳列'+(i+1)+'</div>'+top+'<div class="cmid sub">↓ あなたの商品</div>'+slot+'</div>';
     }).join('')+'</div>';
     const placedN=state.players[p].stock.filter(Boolean).length;
     const me='<div class="zone me"><div class="pname">'+esc(pname(p))+'（あなた）</div><div class="scorebar"><span class="coin">🪙 '+state.players[p].coins+'</span><span class="note">陳列 '+placedN+'/'+NPINS+'</span></div></div>';
     const pins='<div class="panel" style="margin-top:8px"><div class="sub">あなたのピンズ（残り '+avail.length+' 個）— 選んで上の①〜④に置く</div>'
-      +'<div class="pins">'+avail.map(pin=>'<div class="pin '+(sel===pin.iid?'sel':'')+'" onclick="EM.selectStockPin(\''+pin.iid+'\')"><div class="ttl">'+(sel===pin.iid?'◆ ':'')+esc(pin.name)+'</div><div class="icons">'+pinIcons(pin)+'</div></div>').join('')+'</div></div>';
-    const bar='<div class="topbar" style="margin-top:12px"><div class="note">①〜④の順に4つ並べる（公開後に位置を入れ替え調整できる）</div><div style="display:flex;gap:8px">'
+      +'<div class="pins">'+avail.map(pin=>'<div class="pin '+(sel===pin.iid?'sel':'')+'" onclick="EM.selectStockPin(\''+pin.iid+'\')"><div class="pinrow2">'+pinTokenHTML(pin,46)+'<div class="ttl">'+(sel===pin.iid?'◆ ':'')+esc(pin.name)+'</div></div></div>').join('')+'</div></div>';
+    const bar='<div class="topbar" style="margin-top:12px"><div class="note">①〜④の順に4つ並べる（公開後に位置を入れ替え調整できる）。<span class="coin">幅広い特性をバラけさせると、どんな客にも対応しやすい。</span></div><div style="display:flex;gap:8px">'
       +'<button class="btn ghost" onclick="EM.stockReset()">並べ直す</button>'
       +'<button class="btn ghost" onclick="EM.resetGame()">リセット</button>'
-      +'<button class="btn primary" onclick="EM.stockConfirm()" '+(stockReady()?'':'disabled')+'>'+(state.stockStep===0?'確定して相手に渡す ▶':'確定して公開 ▶')+'</button></div></div>';
+      +'<button class="btn primary" onclick="EM.stockConfirm()" '+(stockReady()?'':'disabled')+'>'+((state.stockStep===0 && state.mode!=='ai')?'確定して相手に渡す ▶':'確定して公開 ▶')+'</button></div></div>';
     return head+'<div class="board">'+opp+market+me+'</div>'+pins+bar;
   }
 
@@ -399,7 +548,7 @@
     const selSlot=state.adjSel; const selPin=(selSlot!=null)?state.field[selSlot].placed[act]:null;
     let bestPrev=-1; if(selPin){ state.field.forEach(f=>{ const v=countSatisfied(selPin,f.customer); if(v>bestPrev) bestPrev=v; }); }
     const market='<div class="market">'+state.field.map((f,i)=>{
-      const c=f.customer; const total=c.conditions.length; const pre=judgeCustomer(f.placed[0],f.placed[1],c,CFG); const lead=[pre.winner===0,pre.winner===1];
+      const c=f.customer; const total=c.conditions.length; const pre=judgeCustomer(f.placed[0],f.placed[1],c,S); const lead=[pre.winner===0,pre.winner===1];
       const reqs='<div class="creq">'+c.conditions.map(cd=>condChip(cd,[f.placed[0],f.placed[1]],act)).join('')+'</div>';
       const stat = (pre.winner===0||pre.winner===1)?('<div class="center" style="font-size:12px"><span class="coin">'+esc(pname(pre.winner))+' 優勢</span></div>'):'<div class="center note">互角＝流れ</div>';
       let prev='';
@@ -410,7 +559,7 @@
         + ppinBox(f.placed[0],0,i,lead[0],pre.n0) + '</div>';
     }).join('')+'</div>';
     const me=zoneBar(0, act===0, meExtra);
-    const guide='<div class="note" style="margin:6px 0">条件の <span class="chk y">✓</span>＝あなたの商品が合致／<span class="chk n">✗</span>＝不一致。商品の<span class="ic hit">緑枠</span>＝客が求めて合う特性／<span class="ic miss">赤枠</span>＝求められるが外している特性。'
+    const guide='<div class="note" style="margin:6px 0">条件の <span class="chk y">✓</span>＝あなたの商品が合致／<span class="chk n">✗</span>＝不一致。商品トークンは形・大きさ・透け・紋様・刻印で8軸を表す（📖凡例）。マウスを乗せると詳細。'
       +(state.changesLeft[act]>0?('<br><span class="coin">'+esc(pname(act))+'：自分の商品（'+(act===0?'下段':'上段')+'）を2枚選ぶと位置を入れ替え（残り'+state.changesLeft[act]+'回）。'+(state.adjSel!=null?'各客の「ここへ移すと x/y」を見て移動先を選ぶ。':'1枚目を選ぶと、各客への適性（x/y）が表示されます。')+'</span>'):'<span class="coin">'+esc(pname(act))+'：変更を使い切りました。パスしてください。</span>')+'</div>';
     const bar='<div class="topbar" style="margin-top:10px"><div class="note">両者が連続でパスすると判定に進みます</div><div style="display:flex;gap:8px">'
       +(state.adjSel!=null?'<button class="btn ghost" onclick="EM.cancelSel()">選択解除</button>':'')
@@ -420,7 +569,7 @@
   }
 
   function revealScreen(){
-    const last=state.turn>=CFG.turns;
+    const last=state.turn>=S.turns;
     const head=topbar('判定確定');
     const opp=zoneBar(1,false,'<span class="note">獲得 '+state.players[1].acquired.length+'</span>');
     const market='<div class="market">'+state.field.map((f,i)=>{
@@ -444,11 +593,11 @@
     const c0=state.players[0].coins, c1=state.players[1].coins;
     const msg = c0>c1?pname(0)+' の勝利！' : c1>c0?pname(1)+' の勝利！' : '引き分け';
     const lines=state.players.map(p=>'<div style="margin:6px 0">'+esc(p.name)+'：<span class="coin big">🪙 '+p.coins+'</span>　<span class="note">（獲得客 '+p.acquired.length+' 人）</span></div>').join('');
-    return '<div class="topbar"><div class="sub">EVER MARKET</div>'+legendBtn()+'</div>'
+    return '<div class="topbar"><div class="sub">EVER MARKET</div>'+howtoBtn()+legendBtn()+resultsBtn()+settingsBtn()+'</div>'
       +'<div class="center" style="padding:24px 0">'
       +'<div class="title-em" style="margin:8px 0 18px">'+esc(msg)+'</div>'
       +'<div class="panel" style="display:inline-block; text-align:left; min-width:300px">'+lines+'</div>'
-      +'<div class="center" style="margin-top:20px"><button class="btn primary" onclick="EM.startMatch()">もう一度（同じ設定）</button> <button class="btn ghost" onclick="EM.toTitle()">タイトルへ</button></div>'
+      +'<div class="center" style="margin-top:20px"><button class="btn primary" onclick="EM.again()">もう一度（同じ設定）</button> <button class="btn ghost" onclick="EM.toTitle()">タイトルへ</button></div>'
       +'<div class="note" style="margin-top:14px">※ Phase1はコインが貯まる＝得点のみ。コイン消費（遺物）の駆け引きはPhase2で追加。</div></div>';
   }
 
@@ -463,7 +612,7 @@
       case 'gameover':     html=gameOverScreen(); break;
       default: html=titleScreen();
     }
-    app().innerHTML = html + (legendOpen?legendModal():'');
+    app().innerHTML = html + (legendOpen?legendModal():'') + (resultsOpen?resultsModal():'') + (settingsOpen?settingsModal():'') + (howtoOpen?howtoModal():'');
   }
 
   /* ---------- セルフテスト ---------- */
@@ -504,9 +653,21 @@
   }
 
   /* ---------- 公開API ---------- */
-  window.EM={ startMatch:()=>{newGame();}, beginStock, selectStockPin, stockPlaceAt, stockRemoveAt, stockReset, stockConfirm,
+  window.EM={ startMatch:(mode)=>{newGame(mode||'hotseat');}, again:()=>{newGame(lastMode);}, beginStock, selectStockPin, stockPlaceAt, stockRemoveAt, stockReset, stockConfirm,
     selectAdjSlot, adjPass, cancelSel:()=>{state.adjSel=null;render();}, nextTurn, resetGame, toTitle:()=>{state=null;legendOpen=false;render();},
-    toggleLegend:()=>{legendOpen=!legendOpen;render();} };
+    toggleLegend:()=>{legendOpen=!legendOpen;render();},
+    toggleResults:()=>{resultsOpen=!resultsOpen;render();},
+    exportResults:()=>{ const t=resultsTSV(); if(navigator.clipboard&&navigator.clipboard.writeText){ navigator.clipboard.writeText(t).then(()=>alert('記録をコピーしました（表計算ソフトに貼り付けできます）'),()=>window.prompt('コピーしてください',t)); } else window.prompt('コピーしてください',t); },
+    clearResults:()=>{ if(confirm('記録をすべて消しますか？')){ localStorage.removeItem(RKEY); render(); } },
+    toggleSettings:()=>{settingsOpen=!settingsOpen;render();},
+    setSetting:(k,v)=>{ if(k==='turns') v=Math.min(v, Math.floor(CFG.pinsPerPlayer/CFG.pinsPerTurn)); S[k]=v; saveSettings(S); render(); },
+    resetSettings:()=>{ S=defaultSettings(); saveSettings(S); render(); },
+    applyFairPreset:()=>{ S=Object.assign(defaultSettings(),{deckMode:'mirror',firstMover:'trailing',tiebreak:'split'}); saveSettings(S); render(); },
+    newWithSettings:()=>{ settingsOpen=false; newGame(lastMode); },
+    openHowto:()=>{ howtoOpen=true; render(); },
+    closeHowto:()=>{ howtoOpen=false; try{localStorage.setItem('em_seen_howto','1');}catch(e){} render(); } };
+  // テスト用：本物のエンジンを外部から使えるように公開（ゲーム挙動には影響しない）
+  window.EM_DEBUG={ satisfies, countSatisfied, judgeCustomer, matchInfo, instPins, instCustomers, shuffle, mulberry32, CFG, DATA:D };
 
   /* ---------- ツールチップ（マウスオーバー詳細） ---------- */
   const tipEl=document.createElement('div'); tipEl.className='tip'; document.body.appendChild(tipEl);
@@ -518,7 +679,7 @@
   if(location.search.indexOf('test')>=0){ app().innerHTML=testScreen(); }
   else { const errs=validateData(D);
     if(errs.length){ app().innerHTML='<div class="panel"><div class="ng big">データにエラーがあります（'+errs.length+'件）</div><div class="note">data.js を修正してください：</div>'+errs.map(e=>'<div class="testrow ng">'+esc(e)+'</div>').join('')+'</div>'; }
-    else render();
+    else { try{ if(!localStorage.getItem('em_seen_howto')) howtoOpen=true; }catch(e){} render(); }   // 初回のみ遊び方を自動表示
   }
 })();
 </script>
