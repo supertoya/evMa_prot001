@@ -30,7 +30,8 @@ window.EM_DATA = (function () {
     vpByRarity: { C: 1, UC: 2, R: 4 }, // レア度ごとの勝利点＝獲得コイン
     tiebreak: 'none',               // 同点客：'none'流れる / 'both'両取り / 'split'半分
     unplacedPin: 'carry',           // 余ったピンの扱い（Phase1では未使用）
-    rngSeed: 20260609,              // シャッフルの再現用シード
+    randomSeed: true,               // true=毎回ランダム（チーム試遊向き）／false=rngSeedで固定（再現・デバッグ用）
+    rngSeed: 20260609,              // randomSeed:false のときに使う固定シード
   };
 
   // ---- ピンズ・プール（24種）-------------------------------------------
