@@ -53,70 +53,103 @@
   .coin{color:var(--gold); text-shadow:0 0 10px rgba(232,194,114,.45);}
   .panel{background:var(--panel); border:2px solid var(--line); padding:14px;}
 
-  /* ---- TCG ボード ---- */
+  /* ---- 卓上ボード（夜の卓・革マット・布） ---- */
   .topbar{display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:8px;}
-  .board{display:flex; flex-direction:column; gap:8px;}
-  .zone{border:2px solid var(--line); padding:6px 10px; background:rgba(16,21,29,.55); display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap;}
-  .zone.opp{border-color:rgba(127,214,232,.30);}
-  .zone.me{border-color:rgba(244,160,42,.40);}
-  .zone.active{box-shadow:0 0 16px rgba(244,160,42,.30); border-color:var(--orange);}
-  .pname{font-size:14px;} .pname .turn{color:var(--orange);}
-  .market{display:grid; grid-template-columns:repeat(4,1fr); gap:10px; position:relative; padding:16px 12px 12px; border:2px solid #2c2620;
+  .board{display:flex; flex-direction:column; gap:10px; min-width:660px;}
+  .table{border:6px solid #2c2114; border-radius:14px; padding:12px; overflow-x:auto; position:relative;
     background:
-      radial-gradient(420px 130px at 28% -12%, rgba(127,214,232,.12), transparent 70%),
-      radial-gradient(420px 130px at 72% 112%, rgba(244,160,42,.12), transparent 70%),
-      repeating-linear-gradient(90deg, rgba(0,0,0,.20) 0 2px, rgba(255,255,255,.012) 2px 30px),
-      linear-gradient(180deg, #1b1712, #13100c);
-    box-shadow: inset 0 0 44px rgba(0,0,0,.6);}
-  .market::before{ content:'― 競りの卓 ―'; position:absolute; top:-10px; left:50%; transform:translateX(-50%); background:#13100c; padding:0 12px; font-size:11px; color:var(--dim); letter-spacing:.25em; border:1px solid #2c2620;}
-  @media(max-width:780px){ .market{grid-template-columns:repeat(2,1fr);} }
-  .mcard{border:2px solid var(--line); background:#0f1620; padding:7px; display:flex; flex-direction:column; gap:5px; position:relative;}
-  .mcard.UC{border-color:rgba(127,214,232,.35); box-shadow:0 0 12px rgba(127,214,232,.10);}
-  .mcard.R{border-color:rgba(244,160,42,.45); box-shadow:0 0 16px rgba(244,160,42,.16);}
-  .mcard .no{position:absolute; top:5px; right:7px; color:var(--dim); font-size:10px;}
+      radial-gradient(560px 340px at 50% 46%, rgba(244,160,42,.10), transparent 70%),
+      radial-gradient(420px 240px at 14% 0%, rgba(127,214,232,.06), transparent 70%),
+      repeating-linear-gradient(0deg, rgba(0,0,0,.16) 0 2px, rgba(255,255,255,.014) 2px 60px),
+      linear-gradient(180deg,#4a3826,#392b1b);
+    box-shadow: inset 0 0 70px rgba(0,0,0,.6), 0 6px 18px rgba(0,0,0,.5);}
+  .mat{display:flex; align-items:center; gap:10px; padding:7px 10px; border-radius:10px; border:2px solid #141a26;
+    background:linear-gradient(180deg,#262c3d,#1b2130); box-shadow:0 4px 10px rgba(0,0,0,.45); flex-wrap:wrap;}
+  .mat.me{border-color:#1a130a; background:linear-gradient(180deg,#33281a,#221a0f);}
+  .mat.active{border-color:var(--orange); box-shadow:0 0 16px rgba(244,160,42,.35), 0 4px 10px rgba(0,0,0,.45);}
+  .mat .mmid{flex:1; display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; min-width:240px;}
+  .mzone{border:1.5px dashed rgba(216,210,198,.20); color:rgba(216,210,198,.30); font-size:11px; letter-spacing:.2em;
+    border-radius:6px; padding:10px 6px; min-width:56px; text-align:center; cursor:help;}
+  .pname{font-size:14px;} .pname .turn{color:var(--orange);}
+  .cpile{vertical-align:-3px; margin-right:3px;}
+  .chiprow{display:inline-flex; gap:4px; align-items:center; margin-left:10px;}
+  .chip{width:12px; height:12px; border-radius:50%; background:#cfc6b4; border:1px solid #968a70; box-shadow:0 1px 2px rgba(0,0,0,.4);}
+  .chip.off{background:transparent; border:1px dashed #5a6172; box-shadow:none;}
+  /* 競りの卓＝中央の布（clothband）＋紙の客カード（pcard）の段組み */
+  .tgrid{display:grid; grid-template-columns:repeat(4,minmax(130px,1fr)); column-gap:10px; row-gap:10px; position:relative; padding:2px;}
+  .tgrid .lane{position:relative; z-index:1; display:flex; flex-direction:column; justify-content:stretch;}
+  .clothband{grid-column:1/-1; grid-row:2; margin:-7px -9px; border-radius:6px; position:relative; z-index:0;
+    background:linear-gradient(180deg,#5a2030,#451722); border:2px solid #36101a; box-shadow:inset 0 0 30px rgba(0,0,0,.55);}
+  .clothband::after{content:''; position:absolute; inset:5px; border:1px dashed rgba(228,160,172,.22); border-radius:3px;}
+  .pcard{position:relative; z-index:1; border-radius:6px; padding:7px 8px 8px; color:#3c3426;
+    background:linear-gradient(180deg,#ece2c8,#ded2b2); border:1.5px solid #b3a685; box-shadow:0 4px 9px rgba(0,0,0,.5);}
+  .pcard.r0{transform:rotate(-.9deg);} .pcard.r1{transform:rotate(.7deg);} .pcard.r2{transform:rotate(-.5deg);} .pcard.r3{transform:rotate(1deg);}
+  .pcard.UC{border-color:#8aa6c0;}
+  .pcard.R{border-color:#c69a2e; box-shadow:0 4px 9px rgba(0,0,0,.5), 0 0 12px rgba(232,194,114,.35);}
+  .pcard .no{position:absolute; top:5px; right:7px; color:#8a7d5e; font-size:10px;}
+  .pcard .nm{color:#2e2719;}
+  .pcard .note{color:#7a6e54;}
+  .pcard .coin{color:#8a6314; text-shadow:none;}
+  .pcard .side{color:#8a7d5e;}
+  .seal{display:inline-flex; align-items:center; justify-content:center; width:22px; height:22px; border-radius:50%; font-size:11px; color:#f7efdc; vertical-align:middle;
+    box-shadow:inset 0 0 0 2px rgba(255,255,255,.16), 0 1px 2px rgba(0,0,0,.35);}
+  .seal.C{background:#a07a48;} .seal.UC{background:#5d86aa;}
+  .seal.R{background:#c69a2e; box-shadow:inset 0 0 0 2px rgba(255,255,255,.25), 0 0 8px rgba(232,194,114,.5);}
+  .cvp{color:#7a5a10; margin-left:6px;}
+  .cardback{position:relative; z-index:1; border-radius:6px; border:2px solid #161126; min-height:72px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px;
+    background:repeating-linear-gradient(45deg,#241d33 0 9px,#2a2240 9px 18px); box-shadow:0 4px 9px rgba(0,0,0,.5);}
+  .cardback .bk{font-size:18px; color:#8d80b5;}
+  .cardback .side{color:#6f6590;}
   .cmid{padding:2px 0;}
   .cmid .nm{font-size:13px; margin-top:2px;}
   .creq{display:flex; flex-wrap:wrap; gap:5px; margin-top:5px;}
-  .cchip{border:1px solid #2a313c; background:#0c1118; padding:1px 5px; cursor:help; display:inline-flex; align-items:center; gap:3px; font-size:15px; line-height:1.5;}
+  .cchip{border:1px solid #c2b58f; background:#f0e7cd; padding:1px 5px; cursor:help; display:inline-flex; align-items:center; gap:3px; font-size:15px; line-height:1.5; border-radius:4px;}
   .cchip .dots{display:inline-flex; gap:1px;}
-  .dot{font-size:9px;} .dot.y{color:var(--good);} .dot.n{color:#3a424f;}
+  .dot{font-size:9px;} .dot.y{color:#1f7a40;} .dot.n{color:#c4b794;}
 
-  .ppin{border:2px solid #232a34; background:#0c1118; padding:4px 6px; min-height:40px;}
-  .ppin.opp{border-color:rgba(127,214,232,.30);}
-  .ppin.me{border-color:rgba(244,160,42,.45);}
-  .ppin.lead{box-shadow:0 0 10px rgba(127,224,160,.40); border-color:var(--good);}
-  .ppin.click{cursor:pointer;} .ppin.click:hover{box-shadow:0 0 12px rgba(244,160,42,.5);}
-  .ppin.selA{border-color:var(--orange); box-shadow:0 0 14px rgba(244,160,42,.6); background:#1a130a;}
+  /* 商品＝トレイのくぼみ（recess）に置かれたトークン */
+  .ppin{border:2px solid #11161f; background:linear-gradient(180deg,#1b2130,#151a25); border-radius:8px; padding:5px 7px; min-height:44px; box-shadow:inset 0 3px 9px rgba(0,0,0,.55);}
+  .ppin.opp{border-color:#10141c;}
+  .ppin.me{border-color:#160f07; background:linear-gradient(180deg,#231a0d,#1b1409);}
+  .ppin.lead{box-shadow:0 0 10px rgba(127,224,160,.40), inset 0 3px 9px rgba(0,0,0,.45); border-color:var(--good);}
+  .ppin.click{cursor:pointer;} .ppin.click:hover{box-shadow:0 0 12px rgba(244,160,42,.5), inset 0 3px 9px rgba(0,0,0,.45);}
+  .ppin.selA{border-color:var(--orange); box-shadow:0 0 14px rgba(244,160,42,.6), inset 0 3px 9px rgba(0,0,0,.45); background:#1a130a;}
   .ppin .ttl{font-size:12px; color:var(--gold);} .ppin.opp .ttl{color:var(--blue);}
   .ppin .cnt{float:right; color:var(--ink); font-size:11px;}
   .icons{font-size:15px; line-height:1.9; margin-top:2px;}
   .ic{cursor:help; padding:0 1px;} .ic.off{opacity:.28; filter:grayscale(1);}
   .ic.hit{background:rgba(127,224,160,.22); outline:1px solid var(--good); border-radius:3px;}
   .ic.miss{background:rgba(224,127,127,.16); outline:1px solid rgba(224,127,127,.5); border-radius:3px;}
-  .chk{font-size:12px; font-weight:700; margin:0 1px;} .chk.y{color:var(--good);} .chk.n{color:var(--bad);}
+  .chk{font-size:12px; font-weight:700; margin:0 1px;} .chk.y{color:#1f7a40;} .chk.n{color:#b3372e;}
   .cnt.win{color:var(--good);}
-  .prev{font-size:11px; text-align:center; margin-top:3px; border:1px dashed #2a313c; padding:1px 2px; color:var(--blue);}
+  .prev{font-size:11px; text-align:center; margin-top:4px; border:1px dashed #b3a685; padding:1px 2px; color:#46689a;}
   .prev.best{color:#0a0d12; background:var(--good); border-color:var(--good); font-weight:700;}
-  .prev.cur{color:var(--orange); border-color:var(--orange);}
+  .prev.cur{color:#9a5b10; border-color:#c98a2a;}
   .tok{position:relative; display:inline-block; vertical-align:middle; line-height:0;}
-  .tok svg{position:absolute; left:0; top:0;}
+  .tok svg{position:absolute; left:0; top:0; filter:drop-shadow(0 2px 2px rgba(0,0,0,.45));}
   .tok .motif{position:absolute; inset:0; display:flex; align-items:center; justify-content:center; line-height:1; text-shadow:0 1px 2px rgba(0,0,0,.6); white-space:nowrap;}
   .tokwrap{display:flex; justify-content:center; padding:2px 0;}
   .pinrow2{display:flex; align-items:center; gap:8px;}
-  .desire{display:flex; align-items:center; justify-content:center; gap:6px; margin-top:4px; padding:3px; border:1px dashed #2c3340; background:rgba(207,200,189,.03);}
+  .desire{display:flex; align-items:center; justify-content:center; gap:6px; margin-top:4px; padding:3px; border:1px dashed #b9ac88; background:rgba(90,76,52,.06); border-radius:4px;}
   .tok.ghost{opacity:.95;}
   .side{font-size:10px; color:var(--dim);}
-  .winglow{box-shadow:0 0 18px rgba(127,224,160,.45); border-color:var(--good)!important;}
-  .facedown{display:flex; align-items:center; justify-content:center; min-height:38px; color:var(--dim); border:2px dashed #2c3340; background:#0c1118; font-size:16px;}
+  .winglow{box-shadow:0 0 18px rgba(127,224,160,.45)!important; border-color:var(--good)!important;}
 
-  /* 仕込みの陳列スロット */
-  .dempty{display:flex; align-items:center; justify-content:center; min-height:52px; border:2px dashed #2c3340; cursor:pointer; color:var(--dim); font-size:12px;}
-  .dempty:hover{border-color:var(--blue);}
-  .pins{display:grid; grid-template-columns:repeat(auto-fill,minmax(168px,1fr)); gap:8px; margin-top:8px;}
-  .pin{border:2px solid var(--line); background:#0f1620; padding:6px 8px; cursor:pointer;}
-  .pin:hover{border-color:var(--blue);}
-  .pin.sel{border-color:var(--orange); box-shadow:0 0 12px rgba(244,160,42,.5); background:#1a130a;}
-  .pin .ttl{font-size:12px;}
+  /* 仕込みの陳列スロット（空きくぼみ） */
+  .dempty{display:flex; align-items:center; justify-content:center; min-height:52px; border:2px dashed #5a4a30; border-radius:8px; background:rgba(0,0,0,.22); cursor:pointer; color:#9a8f78; font-size:12px;}
+  .dempty:hover{border-color:var(--orange); color:var(--orange);}
+  /* アクセサリーケース（手持ちピンズ。ベルベット内装＋区画） */
+  .case{margin-top:10px; border:3px solid #5a4a30; border-radius:12px; padding:10px 12px;
+    background:linear-gradient(180deg,#241c12,#1a130b); box-shadow:inset 0 0 34px rgba(0,0,0,.6), 0 4px 10px rgba(0,0,0,.4);}
+  .case .chdr{display:flex; justify-content:space-between; align-items:baseline; gap:10px; flex-wrap:wrap; margin-bottom:8px; color:var(--gold); font-size:12px;}
+  .cgrid{display:grid; grid-template-columns:repeat(auto-fill,minmax(92px,1fr)); gap:9px;}
+  .cslot{min-height:88px; border-radius:9px; border:1px solid #1a1322; padding:6px 4px 5px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px;
+    background:radial-gradient(70% 60% at 50% 38%, #3a2d49, #281e35 78%); box-shadow:inset 0 4px 10px rgba(0,0,0,.6);}
+  .cslot.click{cursor:pointer;} .cslot.click:hover{border-color:var(--blue);}
+  .cslot.sel{border:2px solid var(--orange); box-shadow:0 0 14px rgba(244,160,42,.5), inset 0 4px 10px rgba(0,0,0,.5); transform:translateY(-3px);
+    background:radial-gradient(70% 60% at 50% 38%, #4a3322, #2e2112 78%);}
+  .cslot .ttl{font-size:11px; color:#cfc8bd; max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  .cslot.empty .imprint{width:34px; height:34px; border-radius:50%; border:2px dashed rgba(216,210,198,.10); background:rgba(0,0,0,.18);}
 
   /* ツールチップ */
   .tip{position:fixed; z-index:60; background:#0b0f15; border:2px solid var(--orange); color:var(--ink); font-size:12px; padding:5px 9px; max-width:260px; pointer-events:none; box-shadow:0 0 16px rgba(0,0,0,.7); display:none;}
@@ -127,6 +160,14 @@
   .legend td{border-top:1px solid #20262f; padding:5px 6px; vertical-align:top;}
   .legend td:first-child{color:var(--dim); white-space:nowrap;}
   .glyph{font-size:17px;}
+
+  /* 判定時の演出（獲得グロー・+Nポップ・コイン増加） */
+  @keyframes empop{0%{transform:scale(.2);opacity:0;} 60%{transform:scale(1.3);} 100%{transform:scale(1);opacity:1;}}
+  .pop{display:inline-block; animation:empop .5s ease-out backwards;}
+  @keyframes emglow{0%{box-shadow:0 0 0 rgba(127,224,160,0);} 100%{box-shadow:0 0 18px rgba(127,224,160,.45);}}
+  .winglow.anim{animation:emglow .6s ease-out .1s backwards;}
+  .gainfx{color:var(--gold); margin-left:5px; font-weight:700; text-shadow:0 0 10px rgba(232,194,114,.6);}
+  @media (prefers-reduced-motion: reduce){ .pop,.winglow.anim{animation:none;} }
 
   .scorebar{display:flex; gap:14px; font-size:13px;}
   .testrow{font-size:12px; padding:2px 0; border-bottom:1px solid #1b212a;}
@@ -280,7 +321,7 @@
     else if(shp==='irregular'){ const rng=mulberry32(seedFromId(c.id)); const p=[],n=9; for(let k=0;k<n;k++){const a=k*2*Math.PI/n-Math.PI/2;const rr=r*(0.62+0.38*rng());p.push((cx+rr*Math.cos(a)).toFixed(1)+','+(cy+rr*Math.sin(a)).toFixed(1));} outline='<polygon points="'+p.join(' ')+'"/>'; }
     else { outline='<circle cx="'+cx+'" cy="'+cy+'" r="'+r.toFixed(1)+'"/>'; dash=' stroke-dasharray="3 3"'; }
     const tr=m.transparency, op=(tr&&tr.op==='==')?(tr.value==='transparent'?0.12:tr.value==='translucent'?0.34:0.6):0.10;
-    const svg='<svg width="'+px+'" height="'+px+'" viewBox="0 0 '+px+' '+px+'"><g fill="#cfc8bd" fill-opacity="'+op+'" stroke="#cfc8bd" stroke-opacity="0.55" stroke-width="2" stroke-linejoin="round"'+dash+'>'+outline+'</g></svg>';
+    const svg='<svg width="'+px+'" height="'+px+'" viewBox="0 0 '+px+' '+px+'"><g fill="#5f5340" fill-opacity="'+op+'" stroke="#5f5340" stroke-opacity="0.6" stroke-width="2" stroke-linejoin="round"'+dash+'>'+outline+'</g></svg>';
     const mo=m.motif, cn=m.count, cluster=(cn&&cn.op==='=='&&cn.value==='multiple'); let motif;
     if(mo && mo.op==='=='){ const g=ICON.motif[mo.value]; motif = cluster?('<span class="motif" style="font-size:'+(px*0.24)+'px;letter-spacing:-2px">'+g+g+g+'</span>'):('<span class="motif" style="font-size:'+(px*0.4)+'px">'+g+'</span>'); }
     else if(mo && mo.op==='!='){ motif='<span class="motif" style="font-size:'+(px*0.3)+'px">'+ICON.motif[mo.value]+'🚫</span>'; }
@@ -298,7 +339,7 @@
       +'<table><tbody>'
       +'<tr><td>① 仕込み</td><td>客が見えない状態で、手持ちから商品を4つ選び①〜④に並べる（伏せ）。<b>いろいろな特性をバラけさせる</b>と、どんな客にも対応しやすい。</td></tr>'
       +'<tr><td>② 公開</td><td>客が4枚出る。<b>陳列①＝客①…と位置で対応</b>して競う。</td></tr>'
-      +'<tr><td>③ 調整</td><td>先行→後攻の順に、<b>自分の商品2つの位置を入れ替え</b>（各自2回まで）。相手の出方を見て微調整。</td></tr>'
+      +'<tr><td>③ 調整</td><td>先行→後攻の順に、<b>自分の商品2つの位置を入れ替え</b>（各自2回まで）。相手の出方を見て微調整。間違えたら<b>「↩ 1手戻す」</b>で取り消せる。</td></tr>'
       +'<tr><td>④ 判定</td><td>客の条件(下の印)を<b>多く満たした側がその客を獲得</b>。同点は流れ（⚙設定で変更可）。</td></tr>'
       +'<tr><td>商品の見方</td><td>トークンの<b>形・大きさ・透け・中央の紋様・刻印</b>＝特性。<b>色＝絵柄の種類／鮮やか＝生物</b>。📖凡例に詳細、マウスを乗せると値が出ます。</td></tr>'
       +'</tbody></table>'
@@ -365,9 +406,11 @@
     const seed = S.randomSeed ? Math.floor(Math.random()*1e9) : CFG.rngSeed;
     const rng=mulberry32(seed);
     const deckOf = pid => (S.deckMode==='mirror') ? 'p0' : pid;
-    const mk=(pid,name)=>({ id:pid, name, coins:S.startingCoins,
-      supply:instPins(D.PRESET_DECKS[deckOf(pid)].pins),
-      customerDeck:shuffle(instCustomers(D.PRESET_DECKS[deckOf(pid)].customers),rng), acquired:[], stock:[] });
+    const mk=(pid,name)=>{ const sup=instPins(D.PRESET_DECKS[deckOf(pid)].pins);
+      // アクセサリーケースの並び＝絵柄→大きさで整列（ゲーム中は固定。使うと空き区画が残る）
+      const caseOrder=sup.slice().sort((a,b)=> MOTIFS.indexOf(a.motif)-MOTIFS.indexOf(b.motif) || a.size_mm-b.size_mm || (a.iid<b.iid?-1:1));
+      return { id:pid, name, coins:S.startingCoins, supply:sup, caseOrder,
+        customerDeck:shuffle(instCustomers(D.PRESET_DECKS[deckOf(pid)].customers),rng), acquired:[], stock:[] }; };
     state={ turn:0, phase:null, field:[], mode:lastMode, seed:seed, players:[mk('p0','プレイヤー1'),mk('p1', lastMode==='ai'?'AI':'プレイヤー2')] };
     nextTurnStart();
   }
@@ -400,7 +443,7 @@
   function aiStock(p){ const sup=stockAvail(p).slice().sort((a,b)=>aiUsefulness(b)-aiUsefulness(a)); state.players[p].stock=sup.slice(0,NPINS); }
   function aiWonVP(p){ let v=0; state.field.forEach(f=>{ const r=judgeCustomer(f.placed[0],f.placed[1],f.customer,S); if(r.winner===p||r.winner==='both') v+=f.customer.vp; else if(r.winner==='split') v+=Math.ceil(f.customer.vp/2); }); return v; }
   function aiBestSwap(p){ const base=aiWonVP(p); let best=null,bg=0,F=state.field; for(let i=0;i<F.length;i++)for(let j=i+1;j<F.length;j++){ const t=F[i].placed[p];F[i].placed[p]=F[j].placed[p];F[j].placed[p]=t; const g=aiWonVP(p)-base; const u=F[i].placed[p];F[i].placed[p]=F[j].placed[p];F[j].placed[p]=u; if(g>bg){bg=g;best={i,j};} } return best; }
-  function aiTakeTurn(){ if(state.changesLeft[1]<=0){ state.passStreak++; return; } const sw=aiBestSwap(1); if(sw){ const t=state.field[sw.i].placed[1]; state.field[sw.i].placed[1]=state.field[sw.j].placed[1]; state.field[sw.j].placed[1]=t; state.changesLeft[1]--; state.passStreak=0; } else state.passStreak++; }
+  function aiTakeTurn(){ state.adjHistory.push(adjSnapshot(1,'ai')); if(state.changesLeft[1]<=0){ state.passStreak++; return; } const sw=aiBestSwap(1); if(sw){ const t=state.field[sw.i].placed[1]; state.field[sw.i].placed[1]=state.field[sw.j].placed[1]; state.field[sw.j].placed[1]=t; state.changesLeft[1]--; state.passStreak=0; } else state.passStreak++; }
 
   /* ----- 公開＋調整 ----- */
   function revealAndAdjust(){
@@ -412,15 +455,25 @@
     else if(S.firstMover==='trailing') first=(c0<c1?0:(c1<c0?1:(state.turn-1)%2));
     else first=(state.turn-1)%2;
     state.firstThisTurn=first; state.adjustActive=first;
-    state.changesLeft=[ADJ_MAX,ADJ_MAX]; state.passStreak=0; state.adjSel=null;
+    state.changesLeft=[ADJ_MAX,ADJ_MAX]; state.passStreak=0; state.adjSel=null; state.adjHistory=[];
     state.phase='adjust'; adjKickoff();
   }
+  /* ----- 1手戻す（調整フェーズ限定のアンドゥ） ----- */
+  function adjSnapshot(by,kind){ return { by, kind, placed:state.field.map(f=>f.placed.slice()), changesLeft:state.changesLeft.slice(), passStreak:state.passStreak, active:state.adjustActive }; }
+  function canUndoAdj(){ const h=state.adjHistory; if(!h||!h.length) return false; return state.mode==='ai' ? h.some(x=>x.by===0) : true; }
+  function undoAdj(){ const h=state.adjHistory; if(!h||!h.length) return;
+    let idx=h.length-1;
+    if(state.mode==='ai'){ while(idx>=0 && h[idx].by!==0) idx--; if(idx<0) return; } // ソロ：自分の直前の手まで戻す（AIの応手ごと取り消す）
+    const s=h[idx]; h.length=idx; // s 以降の履歴を捨てて s の直前状態へ復元
+    state.field.forEach((f,i)=>{ f.placed=s.placed[i].slice(); });
+    state.changesLeft=s.changesLeft.slice(); state.passStreak=s.passStreak; state.adjustActive=s.active; state.adjSel=null; render(); }
   function selectAdjSlot(i){ const p=state.adjustActive; if(state.changesLeft[p]<=0) return;
     if(state.adjSel==null){ state.adjSel=i; render(); return; }
     if(state.adjSel===i){ state.adjSel=null; render(); return; }
+    state.adjHistory.push(adjSnapshot(p,'swap'));
     const a=state.adjSel,b=i,t=state.field[a].placed[p]; state.field[a].placed[p]=state.field[b].placed[p]; state.field[b].placed[p]=t;
     state.changesLeft[p]--; state.adjSel=null; state.passStreak=0; adjAfterMove(); }
-  function adjPass(){ state.adjSel=null; state.passStreak++; adjAfterMove(); }
+  function adjPass(){ state.adjHistory.push(adjSnapshot(state.adjustActive,'pass')); state.adjSel=null; state.passStreak++; adjAfterMove(); }
   function adjEnded(){ return state.passStreak>=2 || (state.changesLeft[0]<=0 && state.changesLeft[1]<=0); }
   function adjAfterMove(){ // 直前の手（入替/パス）でpassStreak更新済み → 手番交代しAI/自動パスを進め、人間の番か終了で止める
     while(true){
@@ -439,10 +492,11 @@
     render();
   }
   function doReveal(){
+    state.lastGain=[0,0]; state.coinAnimDone=false; // このターンの増分（判定画面の演出用）
     state.field.forEach(f=>{ const r=judgeCustomer(f.placed[0],f.placed[1],f.customer,S); f.result=r;
-      if(r.winner===0||r.winner===1){ const pl=state.players[r.winner]; pl.coins+=f.customer.vp; pl.acquired.push(f.customer); }
-      else if(r.winner==='both'){ const v=f.customer.vp; state.players[0].coins+=v; state.players[1].coins+=v; state.players[0].acquired.push(f.customer); state.players[1].acquired.push(f.customer); }
-      else if(r.winner==='split'){ const h=Math.ceil(f.customer.vp/2); state.players[0].coins+=h; state.players[1].coins+=h; state.players[0].acquired.push(f.customer); state.players[1].acquired.push(f.customer); } });
+      if(r.winner===0||r.winner===1){ const pl=state.players[r.winner]; pl.coins+=f.customer.vp; pl.acquired.push(f.customer); state.lastGain[r.winner]+=f.customer.vp; }
+      else if(r.winner==='both'){ const v=f.customer.vp; state.players[0].coins+=v; state.players[1].coins+=v; state.players[0].acquired.push(f.customer); state.players[1].acquired.push(f.customer); state.lastGain[0]+=v; state.lastGain[1]+=v; }
+      else if(r.winner==='split'){ const h=Math.ceil(f.customer.vp/2); state.players[0].coins+=h; state.players[1].coins+=h; state.players[0].acquired.push(f.customer); state.players[1].acquired.push(f.customer); state.lastGain[0]+=h; state.lastGain[1]+=h; } });
     state.phase='reveal'; render();
   }
   function nextTurn(){ for(let p=0;p<2;p++){ const used=new Set(state.field.map(f=>f.placed[p]).filter(Boolean).map(x=>x.iid)); state.players[p].supply=state.players[p].supply.filter(pin=>!used.has(pin.iid)); } nextTurnStart(); }
@@ -486,7 +540,7 @@
     else { marks='<span data-tip="'+esc(pname(0))+'">'+mk(pins[0]&&satisfies(pins[0],c))+'</span><span data-tip="'+esc(pname(1))+'">'+mk(pins[1]&&satisfies(pins[1],c))+'</span>'; }
     return '<span class="cchip" data-tip="'+esc(condText(c))+'">'+condGlyph(c)+'<span class="dots">'+marks+'</span></span>';
   }
-  function custMid(c){ return '<div class="cmid"><div><span class="tag '+c.rarity+'">'+c.rarity+'</span> <span class="coin" data-tip="この客の点＝獲得コイン">💰'+c.vp+'</span></div><div class="nm">'+esc(c.name)+'</div><div class="desire"><span class="side">ほしい品 ▸</span>'+desireTokenHTML(c,46)+'</div></div>'; }
+  function custMid(c){ return '<div class="cmid"><div><span class="seal '+c.rarity+'" data-tip="レア度 '+c.rarity+'（封蝋の色）">'+c.rarity+'</span><span class="cvp" data-tip="この客の点＝獲得コイン">💰'+c.vp+'</span></div><div class="nm">'+esc(c.name)+'</div><div class="desire"><span class="side">ほしい品 ▸</span>'+desireTokenHTML(c,46)+'</div></div>'; }
 
   /* ---------- 画面 ---------- */
   function titleScreen(){
@@ -496,7 +550,7 @@
       +'<div class="sub" style="margin-bottom:24px">月の消える夜、決闘競売 — Phase&nbsp;1（コア）</div>'
       +'<button class="btn primary big" onclick="EM.startMatch(\'hotseat\')">2人で対戦</button> <button class="btn big" onclick="EM.startMatch(\'ai\')">1人でAI対戦</button>'
       +'<div class="note" style="margin-top:24px; max-width:600px; display:inline-block; text-align:left">'
-      +'・盤面は<b>TCG風</b>（上＝相手の陳列／中央＝客の卓／下＝自分）。<br>'
+      +'・盤面は<b>対面の卓</b>（上＝相手の席／中央＝布の上の客カード／下＝自分の席）。<br>'
       +'・<b>仕込み</b>：客が見えない状態で商品（ピンズ）を4つ選び①〜④に並べる（伏せ・交代）。<br>'
       +'・<b>公開→調整</b>：客4枚が出て位置で対応。先行→後攻の順に自分のピン2つを入れ替え（各自2回・先行は毎ターン交代）。<br>'
       +'・条件/特性は<b>アイコン表示</b>。マウスを乗せると詳細、<b>📖凡例</b>で一覧。<br>'
@@ -505,8 +559,35 @@
       +'<div class="note" style="margin-top:16px"><a href="?test">▶ セルフテストを実行</a></div></div>';
   }
   function topbar(label){ return '<div class="topbar"><div class="sub">ターン '+state.turn+' / '+S.turns+' ・ '+label+' <span class="pill" data-tip="全ターン終了時にコインが多い方が勝ち">🏆 勝利条件：最終コイン最多</span></div>'+howtoBtn()+legendBtn()+resultsBtn()+settingsBtn()+'</div>'; }
-  function zoneBar(pi,active,extra){
-    return '<div class="zone '+(pi===0?'me':'opp')+(active?' active':'')+'"><div class="pname">'+(active?'<span class="turn">▶ </span>':'')+esc(pname(pi))+(active?' の番':'')+'</div><div class="scorebar"><span class="coin">🪙 '+state.players[pi].coins+'</span>'+(extra||'')+'</div></div>';
+  /* コインの山（数字の代わりに「物」として置く） */
+  function coinPileSVG(){ return '<svg class="cpile" width="24" height="16" viewBox="0 0 24 16" aria-hidden="true"><circle cx="8" cy="10" r="5.5" fill="#c9a14a" stroke="#8a6a28"/><circle cx="16" cy="9" r="5.5" fill="#d6b258" stroke="#8a6a28"/><circle cx="11" cy="5.5" r="5.5" fill="#c9a14a" stroke="#8a6a28"/></svg>'; }
+  /* 残り入替＝卓上のチップ（使うと裏返る見立て） */
+  function chipsHTML(pi){ let s='<span class="chiprow" data-tip="位置入替の残り回数（使うとチップが裏返る）">'; for(let k=0;k<ADJ_MAX;k++) s+='<span class="chip'+(k<state.changesLeft[pi]?'':' off')+'"></span>'; return s+'<span class="note" style="margin-left:4px">入替 残'+state.changesLeft[pi]+'</span></span>'; }
+  /* プレイヤーマット（革マット＋主人公/遺物の置き場を印刷） */
+  function zoneBar(pi,active,extra,coinHtml,side){
+    side = side || (pi===0?'me':'opp');
+    const coins = coinHtml || ('<span class="coin">'+coinPileSVG()+'× '+state.players[pi].coins+'</span>');
+    return '<div class="mat '+side+(active?' active':'')+'">'
+      +'<div class="mzone" data-tip="主人公カードの置き場（Phase 3 で使用予定）">主人公</div>'
+      +'<div class="mmid"><div class="pname">'+(active?'<span class="turn">▶ </span>':'')+esc(pname(pi))+(active?' の番':'')+'</div><div class="scorebar">'+coins+(extra||'')+'</div></div>'
+      +'<div class="mzone" data-tip="遺物カードの置き場（Phase 2 で使用予定）">遺物</div></div>';
+  }
+  /* 判定画面用：コイン数のカウントアップ＋「+N」表示 */
+  function coinFxHtml(pi){
+    const c=state.players[pi].coins, g=(state.lastGain||[0,0])[pi], anim=!state.coinAnimDone;
+    if(g<=0) return '<span class="coin">'+coinPileSVG()+'× '+c+'</span>';
+    const num = anim ? '<span class="cnum" data-countup="'+c+'" data-from="'+(c-g)+'">'+(c-g)+'</span>' : c;
+    return '<span class="coin">'+coinPileSVG()+'× '+num+'</span><span class="gainfx'+(anim?' pop':'')+'">+'+g+'</span>';
+  }
+  const REDUCED_MOTION = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  function startCountUps(){
+    document.querySelectorAll('.cnum[data-countup]').forEach(el=>{
+      const to=+el.dataset.countup, from=+el.dataset.from;
+      if(REDUCED_MOTION || !(to>from)){ el.textContent=to; return; }
+      const t0=performance.now(), dur=700;
+      function step(t){ const k=Math.min(1,(t-t0)/dur); el.textContent=Math.round(from+(to-from)*k); if(k<1 && document.body.contains(el)) requestAnimationFrame(step); }
+      requestAnimationFrame(step);
+    });
   }
 
   function stockHandoffScreen(){
@@ -520,73 +601,83 @@
   function stockScreen(){
     const p=stockP(); const avail=stockAvail(p);
     const head=topbar('仕込み — '+esc(pname(p))+' の陳列');
-    const opp='<div class="zone opp"><div class="pname">'+esc(pname(1-p))+'</div><div class="note">仕込み中（伏せ）…</div></div>';
-    const market='<div class="market">'+state.players[p].stock.map((pin,i)=>{
-      const top='<div class="facedown" data-tip="客は公開後に分かります">❓ <span class="side" style="margin-left:6px">未公開の客</span></div>';
+    const opp=zoneBar(1-p, false, '<span class="note">仕込み中（伏せ）…</span>', null, 'opp');
+    let rowB='', rowT='';
+    state.players[p].stock.forEach((pin,i)=>{
+      rowB+='<div class="cardback" style="grid-column:'+(i+1)+';grid-row:1" data-tip="客は公開後に分かります"><div class="bk">✦</div><div class="side">未公開の客'+(i+1)+'</div></div>';
       const slot = pin
-        ? '<div class="ppin me click" onclick="EM.stockRemoveAt('+i+')" data-tip="クリックで戻す"><div class="pinrow2">'+pinTokenHTML(pin,44)+'<span class="ttl">◇ '+esc(pin.name)+'</span></div></div>'
-        : '<div class="dempty" onclick="EM.stockPlaceAt('+i+')">'+(sel!=null?'ここに置く ▼':'下のピンを選ぶ')+'</div>';
-      return '<div class="mcard"><div class="no">陳列'+(i+1)+'</div>'+top+'<div class="cmid sub">↓ あなたの商品</div>'+slot+'</div>';
-    }).join('')+'</div>';
+        ? '<div class="ppin me click" onclick="EM.stockRemoveAt('+i+')" data-tip="クリックでケースに戻す"><div class="pinrow2">'+pinTokenHTML(pin,44)+'<span class="ttl">◇ '+esc(pin.name)+'</span></div></div>'
+        : '<div class="dempty" onclick="EM.stockPlaceAt('+i+')">'+(sel!=null?'ここに置く ▼':'陳列'+(i+1)+'：ケースから選ぶ')+'</div>';
+      rowT+='<div class="lane" style="grid-column:'+(i+1)+';grid-row:2">'+slot+'</div>';
+    });
+    const market='<div class="tgrid"><div class="clothband" style="grid-row:1"></div>'+rowB+rowT+'</div>';
     const placedN=state.players[p].stock.filter(Boolean).length;
-    const me='<div class="zone me"><div class="pname">'+esc(pname(p))+'（あなた）</div><div class="scorebar"><span class="coin">🪙 '+state.players[p].coins+'</span><span class="note">陳列 '+placedN+'/'+NPINS+'</span></div></div>';
-    const pins='<div class="panel" style="margin-top:8px"><div class="sub">あなたのピンズ（残り '+avail.length+' 個）— 選んで上の①〜④に置く</div>'
-      +'<div class="pins">'+avail.map(pin=>'<div class="pin '+(sel===pin.iid?'sel':'')+'" onclick="EM.selectStockPin(\''+pin.iid+'\')"><div class="pinrow2">'+pinTokenHTML(pin,46)+'<div class="ttl">'+(sel===pin.iid?'◆ ':'')+esc(pin.name)+'</div></div></div>').join('')+'</div></div>';
+    const me=zoneBar(p, true, '<span class="note">陳列 '+placedN+'/'+NPINS+'</span>', null, 'me');
+    const availSet=new Set(avail.map(x=>x.iid));
+    const slots=state.players[p].caseOrder.map(pin=>{
+      if(!availSet.has(pin.iid)) return '<div class="cslot empty" data-tip="空き区画（使用済み・陳列中）"><span class="imprint"></span></div>';
+      const isSel=sel===pin.iid;
+      return '<div class="cslot click'+(isSel?' sel':'')+'" onclick="EM.selectStockPin(\''+pin.iid+'\')" data-tip="商品：'+esc(pin.name)+'｜'+esc(pinChips(pin))+'">'+pinTokenHTML(pin,42)+'<div class="ttl">'+esc(pin.name)+'</div></div>';
+    }).join('');
+    const casePanel='<div class="case"><div class="chdr"><span>◧ アクセサリーケース — 手持ちのピンズ（残り '+avail.length+'）</span><span class="note">絵柄ごとに整理。選んで上の陳列①〜④へ。へこみ＝使用済みの空き</span></div><div class="cgrid">'+slots+'</div></div>';
     const bar='<div class="topbar" style="margin-top:12px"><div class="note">①〜④の順に4つ並べる（公開後に位置を入れ替え調整できる）。<span class="coin">幅広い特性をバラけさせると、どんな客にも対応しやすい。</span></div><div style="display:flex;gap:8px">'
       +'<button class="btn ghost" onclick="EM.stockReset()">並べ直す</button>'
       +'<button class="btn ghost" onclick="EM.resetGame()">リセット</button>'
       +'<button class="btn primary" onclick="EM.stockConfirm()" '+(stockReady()?'':'disabled')+'>'+((state.stockStep===0 && state.mode!=='ai')?'確定して相手に渡す ▶':'確定して公開 ▶')+'</button></div></div>';
-    return head+'<div class="board">'+opp+market+me+'</div>'+pins+bar;
+    return head+'<div class="table"><div class="board">'+opp+market+me+'</div></div>'+casePanel+bar;
   }
 
   function adjustScreen(){
     const act=state.adjustActive;
     const head=topbar('配置調整（公開）');
-    const oppExtra='<span class="note">残り変更 '+state.changesLeft[1]+'</span>';
-    const meExtra ='<span class="note">残り変更 '+state.changesLeft[0]+'</span>';
-    const opp=zoneBar(1, act===1, oppExtra);
+    const opp=zoneBar(1, act===1, chipsHTML(1));
     const selSlot=state.adjSel; const selPin=(selSlot!=null)?state.field[selSlot].placed[act]:null;
     let bestPrev=-1; if(selPin){ state.field.forEach(f=>{ const v=countSatisfied(selPin,f.customer); if(v>bestPrev) bestPrev=v; }); }
-    const market='<div class="market">'+state.field.map((f,i)=>{
+    let rowO='', rowC='', rowM='';
+    state.field.forEach((f,i)=>{
       const c=f.customer; const total=c.conditions.length; const pre=judgeCustomer(f.placed[0],f.placed[1],c,S); const lead=[pre.winner===0,pre.winner===1];
       const reqs='<div class="creq">'+c.conditions.map(cd=>condChip(cd,[f.placed[0],f.placed[1]],act)).join('')+'</div>';
       const stat = (pre.winner===0||pre.winner===1)?('<div class="center" style="font-size:12px"><span class="coin">'+esc(pname(pre.winner))+' 優勢</span></div>'):'<div class="center note">互角＝流れ</div>';
       let prev='';
       if(selPin){ const v=countSatisfied(selPin,c); const isSel=(i===selSlot); prev='<div class="prev'+(isSel?' cur':((v===bestPrev&&v>0)?' best':''))+'">'+(isSel?'⇄ 選択中（'+v+'/'+total+'）':'ここへ移すと '+v+'/'+total)+'</div>'; }
-      return '<div class="mcard '+c.rarity+'"><div class="no">客'+(i+1)+'</div>'
-        + ppinBox(f.placed[1],1,i,lead[1],pre.n1)
-        + custMid(c) + reqs + stat + prev
-        + ppinBox(f.placed[0],0,i,lead[0],pre.n0) + '</div>';
-    }).join('')+'</div>';
-    const me=zoneBar(0, act===0, meExtra);
+      rowO+='<div class="lane" style="grid-column:'+(i+1)+';grid-row:1">'+ppinBox(f.placed[1],1,i,lead[1],pre.n1)+'</div>';
+      rowC+='<div class="pcard r'+(i%4)+' '+c.rarity+'" style="grid-column:'+(i+1)+';grid-row:2"><div class="no">客'+(i+1)+'</div>'+custMid(c)+reqs+stat+prev+'</div>';
+      rowM+='<div class="lane" style="grid-column:'+(i+1)+';grid-row:3">'+ppinBox(f.placed[0],0,i,lead[0],pre.n0)+'</div>';
+    });
+    const market='<div class="tgrid"><div class="clothband" style="grid-row:2"></div>'+rowO+rowC+rowM+'</div>';
+    const me=zoneBar(0, act===0, chipsHTML(0));
     const guide='<div class="note" style="margin:6px 0">条件の <span class="chk y">✓</span>＝あなたの商品が合致／<span class="chk n">✗</span>＝不一致。商品トークンは形・大きさ・透け・紋様・刻印で8軸を表す（📖凡例）。マウスを乗せると詳細。'
       +(state.changesLeft[act]>0?('<br><span class="coin">'+esc(pname(act))+'：自分の商品（'+(act===0?'下段':'上段')+'）を2枚選ぶと位置を入れ替え（残り'+state.changesLeft[act]+'回）。'+(state.adjSel!=null?'各客の「ここへ移すと x/y」を見て移動先を選ぶ。':'1枚目を選ぶと、各客への適性（x/y）が表示されます。')+'</span>'):'<span class="coin">'+esc(pname(act))+'：変更を使い切りました。パスしてください。</span>')+'</div>';
     const bar='<div class="topbar" style="margin-top:10px"><div class="note">両者が連続でパスすると判定に進みます</div><div style="display:flex;gap:8px">'
+      +'<button class="btn ghost" onclick="EM.undoAdj()" '+(canUndoAdj()?'':'disabled')+' data-tip="'+(state.mode==='ai'?'自分の直前の手（とAIの応手）を取り消して打ち直す':'直前の入れ替え／パスを取り消す（いわゆる『待った』。相手と合意の上で）')+'">↩ 1手戻す</button>'
       +(state.adjSel!=null?'<button class="btn ghost" onclick="EM.cancelSel()">選択解除</button>':'')
       +'<button class="btn ghost" onclick="EM.resetGame()">リセット</button>'
       +'<button class="btn primary" onclick="EM.adjPass()">パス（相手の番へ） ▶</button></div></div>';
-    return head+'<div class="board">'+opp+market+me+'</div>'+guide+bar;
+    return head+'<div class="table"><div class="board">'+opp+market+me+'</div></div>'+guide+bar;
   }
 
   function revealScreen(){
     const last=state.turn>=S.turns;
+    const anim=!state.coinAnimDone;
     const head=topbar('判定確定');
-    const opp=zoneBar(1,false,'<span class="note">獲得 '+state.players[1].acquired.length+'</span>');
-    const market='<div class="market">'+state.field.map((f,i)=>{
+    const opp=zoneBar(1,false,'<span class="note">獲得 '+state.players[1].acquired.length+'</span>',coinFxHtml(1));
+    let rowO='', rowC='', rowM='';
+    state.field.forEach((f,i)=>{
       const c=f.customer,r=f.result; const reqs='<div class="creq">'+c.conditions.map(cd=>condChip(cd,[f.placed[0],f.placed[1]],null)).join('')+'</div>';
+      const pop=anim?' pop':'';
       let verdict,cls='';
-      if(r.winner===0||r.winner===1){ verdict='<span class="coin">'+esc(pname(r.winner))+' が獲得 (+'+c.vp+')</span>'; cls=' winglow'; }
-      else if(r.winner==='both') verdict='<span class="coin">両者が獲得 (+'+c.vp+')</span>';
-      else if(r.winner==='split') verdict='<span class="coin">折半 (+'+Math.floor(c.vp/2)+')</span>';
+      if(r.winner===0||r.winner===1){ verdict='<span class="coin'+pop+'">'+esc(pname(r.winner))+' が獲得 (+'+c.vp+')</span>'; cls=' winglow'+(anim?' anim':''); }
+      else if(r.winner==='both') verdict='<span class="coin'+pop+'">両者が獲得 (+'+c.vp+')</span>';
+      else if(r.winner==='split') verdict='<span class="coin'+pop+'">折半 (+'+Math.ceil(c.vp/2)+')</span>';
       else verdict='<span class="note">流れ（同点・誰も取れず）</span>';
-      return '<div class="mcard '+c.rarity+cls+'"><div class="no">客'+(i+1)+'</div>'
-        + ppinBox(f.placed[1],1,i,r.winner===1,r.n1) + custMid(c) + reqs
-        + '<div class="center" style="font-size:12px">'+verdict+'</div>'
-        + ppinBox(f.placed[0],0,i,r.winner===0,r.n0) + '</div>';
-    }).join('')+'</div>';
-    const me=zoneBar(0,false,'<span class="note">獲得 '+state.players[0].acquired.length+'</span>');
+      rowO+='<div class="lane" style="grid-column:'+(i+1)+';grid-row:1">'+ppinBox(f.placed[1],1,i,r.winner===1,r.n1)+'</div>';
+      rowC+='<div class="pcard r'+(i%4)+' '+c.rarity+cls+'" style="grid-column:'+(i+1)+';grid-row:2"><div class="no">客'+(i+1)+'</div>'+custMid(c)+reqs+'<div class="center" style="font-size:12px">'+verdict+'</div></div>';
+      rowM+='<div class="lane" style="grid-column:'+(i+1)+';grid-row:3">'+ppinBox(f.placed[0],0,i,r.winner===0,r.n0)+'</div>';
+    });
+    const market='<div class="tgrid"><div class="clothband" style="grid-row:2"></div>'+rowO+rowC+rowM+'</div>';
+    const me=zoneBar(0,false,'<span class="note">獲得 '+state.players[0].acquired.length+'</span>',coinFxHtml(0));
     const btn='<div class="center" style="margin-top:14px"><button class="btn primary big" onclick="EM.nextTurn()">'+(last?'最終結果へ ▶':'次のターンへ ▶')+'</button> <button class="btn ghost" onclick="EM.resetGame()">リセット</button></div>';
-    return head+'<div class="board">'+opp+market+me+'</div>'+btn;
+    return head+'<div class="table"><div class="board">'+opp+market+me+'</div></div>'+btn;
   }
 
   function gameOverScreen(){
@@ -613,6 +704,7 @@
       default: html=titleScreen();
     }
     app().innerHTML = html + (legendOpen?legendModal():'') + (resultsOpen?resultsModal():'') + (settingsOpen?settingsModal():'') + (howtoOpen?howtoModal():'');
+    if(state && state.phase==='reveal' && !state.coinAnimDone){ state.coinAnimDone=true; startCountUps(); } // 演出は判定画面の初回表示のみ（モーダル開閉の再描画では再生しない）
   }
 
   /* ---------- セルフテスト ---------- */
@@ -654,7 +746,7 @@
 
   /* ---------- 公開API ---------- */
   window.EM={ startMatch:(mode)=>{newGame(mode||'hotseat');}, again:()=>{newGame(lastMode);}, beginStock, selectStockPin, stockPlaceAt, stockRemoveAt, stockReset, stockConfirm,
-    selectAdjSlot, adjPass, cancelSel:()=>{state.adjSel=null;render();}, nextTurn, resetGame, toTitle:()=>{state=null;legendOpen=false;render();},
+    selectAdjSlot, adjPass, undoAdj, cancelSel:()=>{state.adjSel=null;render();}, nextTurn, resetGame, toTitle:()=>{state=null;legendOpen=false;render();},
     toggleLegend:()=>{legendOpen=!legendOpen;render();},
     toggleResults:()=>{resultsOpen=!resultsOpen;render();},
     exportResults:()=>{ const t=resultsTSV(); if(navigator.clipboard&&navigator.clipboard.writeText){ navigator.clipboard.writeText(t).then(()=>alert('記録をコピーしました（表計算ソフトに貼り付けできます）'),()=>window.prompt('コピーしてください',t)); } else window.prompt('コピーしてください',t); },
@@ -674,6 +766,19 @@
   document.addEventListener('mouseover', e=>{ const el=e.target.closest('[data-tip]'); if(el){ tipEl.textContent=el.getAttribute('data-tip'); tipEl.style.display='block'; } });
   document.addEventListener('mousemove', e=>{ if(tipEl.style.display==='block'){ let x=e.clientX+14, y=e.clientY+16; if(x>window.innerWidth-260) x=window.innerWidth-260; tipEl.style.left=x+'px'; tipEl.style.top=y+'px'; } });
   document.addEventListener('mouseout', e=>{ if(e.target.closest('[data-tip]')) tipEl.style.display='none'; });
+  /* タッチ端末：タップで詳細を表示（3秒で消える）。ボタン等の操作がある要素は操作を優先しツールチップは出さない */
+  let tipTimer=null;
+  document.addEventListener('touchstart', e=>{
+    const el=e.target.closest('[data-tip]');
+    if(el && !el.closest('[onclick]')){
+      tipEl.textContent=el.getAttribute('data-tip'); tipEl.style.display='block';
+      const t=e.touches[0]; let x=t.clientX+14, y=t.clientY+16;
+      if(x>window.innerWidth-260) x=window.innerWidth-260;
+      if(y>window.innerHeight-80) y=Math.max(0,t.clientY-70);
+      tipEl.style.left=x+'px'; tipEl.style.top=y+'px';
+      clearTimeout(tipTimer); tipTimer=setTimeout(()=>{ tipEl.style.display='none'; },3000);
+    } else { tipEl.style.display='none'; }
+  }, {passive:true});
 
   /* ---------- 起動 ---------- */
   if(location.search.indexOf('test')>=0){ app().innerHTML=testScreen(); }
