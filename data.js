@@ -26,9 +26,10 @@ window.EM_DATA = (function () {
     pinsPerTurn: 4,                 // 毎ターン刺すピンズ数
     customersPresentedPerPlayer: 2, // 毎ターン各自が場に出す客
     relicsDrawnPerTurn: 2,          // 毎ターン引く遺物（Phase2で使用）
-    startingCoins: 0,               // 種銭（0スタート。Phase2でコイン消費を入れる際に再検討：0=稼いでから使う／3〜5=初手から動ける）
+    startingCoins: 3,               // 種銭（2026-06-11 チーム決定：遺物経済に向け3。⚙設定で0/3/5/8に切替可）
     vpByRarity: { C: 1, UC: 2, R: 4 }, // レア度ごとの勝利点＝獲得コイン
-    tiebreak: 'none',               // 同点客：'none'流れる / 'both'両取り / 'split'半分
+    tiebreak: 'split',              // 同点客の既定（2026-06-11 チーム決定でsplitへ変更）：'split'折半(切り上げ) / 'none'流れる / 'both'両取り
+    winLine: 20,                    // 強制勝利ライン（手持ちコインが達したフェーズの終了時に即勝利。0=無効。チップ循環＝各自プール20枚の物理表現）
     unplacedPin: 'carry',           // 余ったピンの扱い（Phase1では未使用）
     randomSeed: true,               // true=毎回ランダム（チーム試遊向き）／false=rngSeedで固定（再現・デバッグ用）
     rngSeed: 20260609,              // randomSeed:false のときに使う固定シード
