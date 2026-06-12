@@ -204,6 +204,7 @@
     switch(c.op){ case '==':return v===c.value; case '!=':return v!==c.value; case '>=':return v>=c.value; case '<=':return v<=c.value; default:return false; } }
   function countSatisfied(pin,cust){ if(!pin) return 0; return cust.conditions.reduce((n,c)=>n+(satisfies(pin,c)?1:0),0); }
   function judgeCustomer(pin0,pin1,cust,cfg){
+    if(!pin0 && !pin1) return {winner:null, n0:0, n1:0};   // 誰も商品を出していない客は帰る（同点処理の設定に関わらず流れ。将来の「5客目」系の整合）
     const n0=countSatisfied(pin0,cust), n1=countSatisfied(pin1,cust); let winner;
     if(n0===n1){ winner = cfg.tiebreak==='both'?'both' : cfg.tiebreak==='split'?'split' : null; }
     else winner = n0>n1?0:1;
@@ -335,12 +336,12 @@
   function howtoModal(){
     return '<div class="legend" onclick="EM.closeHowto()"><div class="box" onclick="event.stopPropagation()">'
       +'<div style="display:flex;justify-content:space-between;align-items:center"><div class="big">❓ 遊び方（永遠闇市）</div><button class="btn ghost sm" onclick="EM.closeHowto()">閉じる ✕</button></div>'
-      +'<div class="note" style="margin:6px 0 10px">あなたは闇市の商人。客の望みに合う「商品(ピンズ)」を出し、条件をより多く満たした側がその客を獲得＝<span class="coin">コイン</span>。全'+S.turns+'ターン後、コインが多い方が勝ち。</div>'
+      +'<div class="note" style="margin:6px 0 10px">あなたは闇市の商人。客の望みに合う「商品(ピンズ)」を出し、条件をより多く満たした側がその客を獲得＝<span class="coin">コイン</span>。全'+S.turns+'ターン後、コインが多い方が勝ち。'+(S.winLine>0?'<b>先に'+S.winLine+'コインに達すると、その場で勝利！</b>':'')+'</div>'
       +'<table><tbody>'
       +'<tr><td>① 仕込み</td><td>客が見えない状態で、手持ちから商品を4つ選び①〜④に並べる（伏せ）。<b>いろいろな特性をバラけさせる</b>と、どんな客にも対応しやすい。</td></tr>'
       +'<tr><td>② 公開</td><td>客が4枚出る。<b>陳列①＝客①…と位置で対応</b>して競う。</td></tr>'
       +'<tr><td>③ 調整</td><td>先行→後攻の順に、<b>自分の商品2つの位置を入れ替え</b>（各自2回まで）。相手の出方を見て微調整。間違えたら<b>「↩ 1手戻す」</b>で取り消せる。</td></tr>'
-      +'<tr><td>④ 判定</td><td>客の条件(下の印)を<b>多く満たした側がその客を獲得</b>。同点は流れ（⚙設定で変更可）。</td></tr>'
+      +'<tr><td>④ 判定</td><td>客の条件(下の印)を<b>多く満たした側がその客を獲得</b>。同点は折半（⚙設定で変更可）。</td></tr>'
       +'<tr><td>商品の見方</td><td>トークンの<b>形・大きさ・透け・中央の紋様・刻印</b>＝特性。<b>色＝絵柄の種類／鮮やか＝生物</b>。📖凡例に詳細、マウスを乗せると値が出ます。</td></tr>'
       +'</tbody></table>'
       +'<div class="center" style="margin-top:12px"><button class="btn primary sm" onclick="EM.closeHowto()">はじめる ▶</button></div>'
@@ -349,11 +350,35 @@
   /* ----- テスト記録（localStorageに自動蓄積・統計） ----- */
   const RKEY='em_results_v1';
   function loadResults(){ try{return JSON.parse(localStorage.getItem(RKEY)||'[]');}catch(e){return [];} }
+  const TBJA={none:'流れ',split:'折半',both:'両取り'}, FMJA={alternate:'交代',trailing:'劣勢先行',fixed:'P1固定'}, DMJA={normal:'通常',mirror:'ミラー'};
   function recordResult(){ try{ const p=state.players; const tal=pl=>{const t={C:0,UC:0,R:0};pl.acquired.forEach(c=>t[c.rarity]++);return t;};
-    const arr=loadResults(); arr.push({ts:new Date().toISOString().slice(0,16).replace('T',' '), seed:state.seed, c0:p[0].coins,c1:p[1].coins,a0:tal(p[0]),a1:tal(p[1]),w:p[0].coins>p[1].coins?0:(p[1].coins>p[0].coins?1:-1)});
+    const endTurn = state.forcedWin ? state.turn : S.turns; // 強制勝利＝到達ターン／通常＝全ターン
+    const arr=loadResults(); arr.push({ts:new Date().toISOString().slice(0,16).replace('T',' '), seed:state.seed,
+      c0:p[0].coins,c1:p[1].coins,a0:tal(p[0]),a1:tal(p[1]),w:p[0].coins>p[1].coins?0:(p[1].coins>p[0].coins?1:-1),
+      tb:S.tiebreak, fm:S.firstMover, dm:S.deckMode, tn:S.turns, sc:S.startingCoins, wl:S.winLine,
+      fl:state.flowed||0, mg:Math.abs(p[0].coins-p[1].coins), fw:state.forcedWin?1:0, et:endTurn});
     localStorage.setItem(RKEY,JSON.stringify(arr)); }catch(e){} }
-  function resultsTSV(){ const a=loadResults(); let s='日時\tシード\tP1コイン\tP2コイン\t勝者\tP1獲得C/UC/R\tP2獲得C/UC/R\n';
-    a.forEach(r=>{ s+=r.ts+'\t'+(r.seed!=null?r.seed:'')+'\t'+r.c0+'\t'+r.c1+'\t'+(r.w===0?'P1':r.w===1?'P2':'引分')+'\t'+r.a0.C+'/'+r.a0.UC+'/'+r.a0.R+'\t'+r.a1.C+'/'+r.a1.UC+'/'+r.a1.R+'\n'; }); return s; }
+  function resultsTSV(){ const a=loadResults(); let s='日時\tシード\t同点\t先行\tデッキ\t種銭\t強制線\tターン数\tP1コイン\tP2コイン\t勝者\tコイン差\t流れ数\t強制勝利\t終了T\tP1獲得C/UC/R\tP2獲得C/UC/R\n';
+    a.forEach(r=>{ const v=x=>x!=null?x:'';
+      s+=r.ts+'\t'+(r.seed!=null?r.seed:'')+'\t'+v(TBJA[r.tb]||r.tb)+'\t'+v(FMJA[r.fm]||r.fm)+'\t'+v(DMJA[r.dm]||r.dm)+'\t'+v(r.sc)+'\t'+v(r.wl)+'\t'+v(r.tn)
+        +'\t'+r.c0+'\t'+r.c1+'\t'+(r.w===0?'P1':r.w===1?'P2':'引分')+'\t'+v(r.mg)+'\t'+v(r.fl)+'\t'+(r.fw===1?'⚡':(r.fw===0?'-':''))+'\t'+v(r.et)
+        +'\t'+r.a0.C+'/'+r.a0.UC+'/'+r.a0.R+'\t'+r.a1.C+'/'+r.a1.UC+'/'+r.a1.R+'\n'; }); return s; }
+  /* 条件別の平均（同点/先行/デッキ/種銭/強制線でグループ化） */
+  function condStatsHTML(a){
+    const g={};
+    a.forEach(r=>{ const k=(TBJA[r.tb]||'旧記録')+'・'+(FMJA[r.fm]||'—')+'・'+(DMJA[r.dm]||'—')+'・種'+(r.sc!=null?r.sc:'—')+'・線'+(r.wl!=null?(r.wl||'なし'):'—');
+      (g[k]=g[k]||[]).push(r); });
+    const keys=Object.keys(g).sort((x,y)=>g[y].length-g[x].length).slice(0,8);
+    if(!keys.length) return '';
+    let h='<div class="sub" style="margin-top:14px">条件別の平均（試合数の多い順・最大8条件）</div><table><tbody><tr><td>設定</td><td>試合</td><td>P1/P2/分</td><td>平均コイン</td><td>平均差</td><td>流れ/試合</td><td>⚡強制勝利</td></tr>';
+    keys.forEach(k=>{ const rs=g[k], n=rs.length;
+      const w0=rs.filter(r=>r.w===0).length, w1=rs.filter(r=>r.w===1).length, dr=n-w0-w1;
+      const m=f=>{const v=rs.map(f).filter(x=>x!=null); return v.length?v.reduce((s,x)=>s+x,0)/v.length:null;};
+      const fl=m(r=>r.fl), mg=m(r=>r.mg), fw=m(r=>r.fw);
+      const fwT=rs.filter(r=>r.fw===1).map(r=>r.et), fwTavg=fwT.length?(fwT.reduce((s,x)=>s+x,0)/fwT.length).toFixed(1):null;
+      h+='<tr><td>'+k+'</td><td>'+n+'</td><td>'+w0+'/'+w1+'/'+dr+'</td><td>'+m(r=>r.c0).toFixed(1)+' / '+m(r=>r.c1).toFixed(1)+'</td><td>'+(mg!=null?mg.toFixed(1):'—')+'</td><td>'+(fl!=null?fl.toFixed(1):'—')+'</td><td>'+(fw!=null?Math.round(fw*100)+'%'+(fwTavg?'（平均T'+fwTavg+'）':''):'—')+'</td></tr>'; });
+    return h+'</tbody></table>';
+  }
   function resultsBtn(){ return '<button class="btn ghost sm" onclick="EM.toggleResults()">📊 記録</button>'; }
   function resultsModal(){ const a=loadResults(), n=a.length;
     const w0=a.filter(r=>r.w===0).length,w1=a.filter(r=>r.w===1).length,dr=a.filter(r=>r.w===-1).length;
@@ -364,8 +389,8 @@
         +'<tr><td>勝敗</td><td>プレイヤー1 '+w0+'勝 ／ プレイヤー2 '+w1+'勝 ／ 引分 '+dr+'</td></tr>'
         +'<tr><td>平均コイン</td><td>P1 '+mean(r=>r.c0)+' ／ P2 '+mean(r=>r.c1)+'</td></tr>'
         +'<tr><td>勝者/敗者 平均</td><td>勝者 '+mean(r=>Math.max(r.c0,r.c1))+' ／ 敗者 '+mean(r=>Math.min(r.c0,r.c1))+'</td></tr>'
-        +'<tr><td>直近5戦</td><td>'+a.slice(-5).reverse().map(r=>r.ts+'  P1 '+r.c0+' - '+r.c1+' P2 ('+(r.w===0?'P1':r.w===1?'P2':'分')+')').join('<br>')+'</td></tr>'
-        +'</tbody></table>';
+        +'<tr><td>直近5戦</td><td>'+a.slice(-5).reverse().map(r=>r.ts+'  P1 '+r.c0+' - '+r.c1+' P2 ('+(r.w===0?'P1':r.w===1?'P2':'分')+')'+(r.fw===1?' ⚡T'+r.et:'')).join('<br>')+'</td></tr>'
+        +'</tbody></table>' + condStatsHTML(a);
     return '<div class="legend" onclick="EM.toggleResults()"><div class="box" onclick="event.stopPropagation()">'
       +'<div style="display:flex;justify-content:space-between;align-items:center"><div class="big">📊 テスト記録（コイン統計）</div><button class="btn ghost sm" onclick="EM.toggleResults()">閉じる ✕</button></div>'
       +body
@@ -374,10 +399,13 @@
   }
   /* ----- 設定（テスト用・localStorageに保存） ----- */
   const SKEY='em_settings_v1';
-  function defaultSettings(){ return { startingCoins:CFG.startingCoins, turns:CFG.turns, tiebreak:CFG.tiebreak, randomSeed:CFG.randomSeed!==false, deckMode:'normal', firstMover:'alternate' }; }
+  function defaultSettings(){ return { startingCoins:CFG.startingCoins, turns:CFG.turns, tiebreak:CFG.tiebreak, randomSeed:CFG.randomSeed!==false, deckMode:'normal', firstMover:'alternate', winLine:(CFG.winLine!=null?CFG.winLine:20) }; }
   function loadSettings(){ try{return JSON.parse(localStorage.getItem(SKEY)||'{}');}catch(e){return {};} }
   function saveSettings(o){ try{localStorage.setItem(SKEY,JSON.stringify(o));}catch(e){} }
   let S = Object.assign(defaultSettings(), loadSettings());
+  // 2026-06-11 既定変更（同点=折半／種銭3／強制勝利20）：winLine未導入時代の保存設定を、一度だけ新既定へ移行
+  // ※ data.js が旧キャッシュでも正しく移行できるよう、決定値を直書き（CFG参照にしない）
+  if(!('winLine' in loadSettings())){ S.tiebreak='split'; S.startingCoins=3; S.winLine=20; saveSettings(S); }
   S.turns = Math.min(S.turns||CFG.turns, Math.floor(CFG.pinsPerPlayer/CFG.pinsPerTurn)); // ピン枯渇によるソフトロック防止
   function jsv(v){ return typeof v==='string'?("'"+v+"'"):String(v); }
   function settingsBtn(){ return '<button class="btn ghost sm" onclick="EM.toggleSettings()">⚙ 設定</button>'; }
@@ -389,12 +417,14 @@
       +'<table><tbody>'
       +optRow('種銭（開始コイン）','startingCoins',[{v:0,label:'0'},{v:3,label:'3'},{v:5,label:'5'},{v:8,label:'8'}])
       +optRow('ターン数','turns',[{v:3,label:'3'},{v:5,label:'5'}])
-      +optRow('同点客','tiebreak',[{v:'none',label:'流れ'},{v:'split',label:'折半'},{v:'both',label:'両取り'}])
+      +optRow('同点客','tiebreak',[{v:'split',label:'折半'},{v:'none',label:'流れ'},{v:'both',label:'両取り'}])
+      +optRow('強制勝利','winLine',[{v:20,label:'20'},{v:22,label:'22'},{v:25,label:'25'},{v:0,label:'なし'}])
       +optRow('展開','randomSeed',[{v:true,label:'毎回ランダム'},{v:false,label:'固定シード'}])
       +optRow('デッキ','deckMode',[{v:'normal',label:'通常(左右別)'},{v:'mirror',label:'ミラー(同一)'}])
       +optRow('先行','firstMover',[{v:'alternate',label:'毎ターン交代'},{v:'trailing',label:'劣勢側が先行'},{v:'fixed',label:'P1固定'}])
       +'</tbody></table>'
       + ((S.deckMode==='mirror' && (S.tiebreak==='both'||S.firstMover==='fixed')) ? '<div class="note" style="color:var(--bad);margin-top:8px">⚠ ミラー＋'+(S.tiebreak==='both'?'両取り':'')+((S.tiebreak==='both'&&S.firstMover==='fixed')?'・':'')+(S.firstMover==='fixed'?'P1固定':'')+' は退化的になりやすい組合せ（毎回引分／先行が圧勝）。避けるのが無難です。</div>' : '')
+      + ((S.tiebreak==='both' && S.winLine>0) ? '<div class="note" style="color:var(--bad);margin-top:8px">⚠ 両取り＋強制勝利は経済が膨らみ2〜3ターンで決着しがち。テスト目的以外では避けるのが無難です。</div>' : '')
       +'<div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap"><button class="btn primary sm" onclick="EM.newWithSettings()">この設定で新規対戦 ▶</button><button class="btn sm" onclick="EM.applyFairPreset()">⚖ 公平比較プリセット</button><button class="btn ghost sm" onclick="EM.resetSettings()">既定に戻す</button></div>'
       +'<div class="note" style="margin-top:4px">公平比較＝ミラー＋劣勢先行＋折半（デッキ差・先行偏りを抑えて腕と運を比較）。</div>'
       +'</div></div>';
@@ -411,7 +441,7 @@
       const caseOrder=sup.slice().sort((a,b)=> MOTIFS.indexOf(a.motif)-MOTIFS.indexOf(b.motif) || a.size_mm-b.size_mm || (a.iid<b.iid?-1:1));
       return { id:pid, name, coins:S.startingCoins, supply:sup, caseOrder,
         customerDeck:shuffle(instCustomers(D.PRESET_DECKS[deckOf(pid)].customers),rng), acquired:[], stock:[] }; };
-    state={ turn:0, phase:null, field:[], mode:lastMode, seed:seed, players:[mk('p0','プレイヤー1'),mk('p1', lastMode==='ai'?'AI':'プレイヤー2')] };
+    state={ turn:0, phase:null, field:[], mode:lastMode, seed:seed, flowed:0, forcedWin:false, players:[mk('p0','プレイヤー1'),mk('p1', lastMode==='ai'?'AI':'プレイヤー2')] };
     nextTurnStart();
   }
   function nextTurnStart(){
@@ -497,9 +527,13 @@
       if(r.winner===0||r.winner===1){ const pl=state.players[r.winner]; pl.coins+=f.customer.vp; pl.acquired.push(f.customer); state.lastGain[r.winner]+=f.customer.vp; }
       else if(r.winner==='both'){ const v=f.customer.vp; state.players[0].coins+=v; state.players[1].coins+=v; state.players[0].acquired.push(f.customer); state.players[1].acquired.push(f.customer); state.lastGain[0]+=v; state.lastGain[1]+=v; }
       else if(r.winner==='split'){ const h=Math.ceil(f.customer.vp/2); state.players[0].coins+=h; state.players[1].coins+=h; state.players[0].acquired.push(f.customer); state.players[1].acquired.push(f.customer); state.lastGain[0]+=h; state.lastGain[1]+=h; } });
+    state.flowed += state.field.filter(f=>f.result.winner===null).length;
+    if(S.winLine>0 && (state.players[0].coins>=S.winLine || state.players[1].coins>=S.winLine)) state.forcedWin=true; // 強制勝利ライン：フェーズ終了時に到達チェック（チーム決定）
     state.phase='reveal'; render();
   }
-  function nextTurn(){ for(let p=0;p<2;p++){ const used=new Set(state.field.map(f=>f.placed[p]).filter(Boolean).map(x=>x.iid)); state.players[p].supply=state.players[p].supply.filter(pin=>!used.has(pin.iid)); } nextTurnStart(); }
+  function nextTurn(){ for(let p=0;p<2;p++){ const used=new Set(state.field.map(f=>f.placed[p]).filter(Boolean).map(x=>x.iid)); state.players[p].supply=state.players[p].supply.filter(pin=>!used.has(pin.iid)); }
+    if(state.forcedWin){ state.phase='gameover'; recordResult(); render(); return; } // 20到達＝そのフェーズ終了で即決着（未達なら従来どおり最終コイン最多）
+    nextTurnStart(); }
   function resetGame(){ if(confirm('最初からやり直しますか？ 現在の試合は破棄されます。')){ state=null; legendOpen=false; render(); } }
 
   /* ---------- 部品 ---------- */
@@ -554,11 +588,12 @@
       +'・<b>仕込み</b>：客が見えない状態で商品（ピンズ）を4つ選び①〜④に並べる（伏せ・交代）。<br>'
       +'・<b>公開→調整</b>：客4枚が出て位置で対応。先行→後攻の順に自分のピン2つを入れ替え（各自2回・先行は毎ターン交代）。<br>'
       +'・条件/特性は<b>アイコン表示</b>。マウスを乗せると詳細、<b>📖凡例</b>で一覧。<br>'
-      +'・<b>判定</b>：条件を多く満たした側が客を獲得＝<span class="coin">コイン</span>。同点は流れ。全'+S.turns+'ターン後コインが多い方が勝者。'
+      +'・<b>判定</b>：条件を多く満たした側が客を獲得＝<span class="coin">コイン</span>。同点は折半（⚙で変更可）。全'+S.turns+'ターン後コイン最多が勝者'+(S.winLine>0?'（先に'+S.winLine+'コイン到達で即勝利）':'')+'。'
       +'</div>'
       +'<div class="note" style="margin-top:16px"><a href="?test">▶ セルフテストを実行</a></div></div>';
   }
-  function topbar(label){ return '<div class="topbar"><div class="sub">ターン '+state.turn+' / '+S.turns+' ・ '+label+' <span class="pill" data-tip="全ターン終了時にコインが多い方が勝ち">🏆 勝利条件：最終コイン最多</span></div>'+howtoBtn()+legendBtn()+resultsBtn()+settingsBtn()+'</div>'; }
+  function topbar(label){ const winTxt = S.winLine>0 ? '🏆 コイン最多／'+S.winLine+'で即勝利' : '🏆 勝利条件：最終コイン最多';
+    return '<div class="topbar"><div class="sub">ターン '+state.turn+' / '+S.turns+' ・ '+label+' <span class="pill" data-tip="全ターン終了時にコインが多い方が勝ち。'+(S.winLine>0?'先に'+S.winLine+'コインへ到達すると、そのフェーズ終了時に即勝利。':'')+'">'+winTxt+'</span></div>'+howtoBtn()+legendBtn()+resultsBtn()+settingsBtn()+'</div>'; }
   /* コインの山（数字の代わりに「物」として置く） */
   function coinPileSVG(){ return '<svg class="cpile" width="24" height="16" viewBox="0 0 24 16" aria-hidden="true"><circle cx="8" cy="10" r="5.5" fill="#c9a14a" stroke="#8a6a28"/><circle cx="16" cy="9" r="5.5" fill="#d6b258" stroke="#8a6a28"/><circle cx="11" cy="5.5" r="5.5" fill="#c9a14a" stroke="#8a6a28"/></svg>'; }
   /* 残り入替＝卓上のチップ（使うと裏返る見立て） */
@@ -657,7 +692,7 @@
   }
 
   function revealScreen(){
-    const last=state.turn>=S.turns;
+    const last=state.turn>=S.turns || state.forcedWin;
     const anim=!state.coinAnimDone;
     const head=topbar('判定確定');
     const opp=zoneBar(1,false,'<span class="note">獲得 '+state.players[1].acquired.length+'</span>',coinFxHtml(1));
@@ -676,13 +711,15 @@
     });
     const market='<div class="tgrid"><div class="clothband" style="grid-row:2"></div>'+rowO+rowC+rowM+'</div>';
     const me=zoneBar(0,false,'<span class="note">獲得 '+state.players[0].acquired.length+'</span>',coinFxHtml(0));
+    const fwLine = state.forcedWin ? '<div class="center" style="margin-top:12px"><span class="coin'+(anim?' pop':'')+'" style="font-size:16px">⚡ 強制勝利ライン（'+S.winLine+'コイン）到達 — この判定で決着！</span></div>' : '';
     const btn='<div class="center" style="margin-top:14px"><button class="btn primary big" onclick="EM.nextTurn()">'+(last?'最終結果へ ▶':'次のターンへ ▶')+'</button> <button class="btn ghost" onclick="EM.resetGame()">リセット</button></div>';
-    return head+'<div class="table"><div class="board">'+opp+market+me+'</div></div>'+btn;
+    return head+'<div class="table"><div class="board">'+opp+market+me+'</div></div>'+fwLine+btn;
   }
 
   function gameOverScreen(){
     const c0=state.players[0].coins, c1=state.players[1].coins;
-    const msg = c0>c1?pname(0)+' の勝利！' : c1>c0?pname(1)+' の勝利！' : '引き分け';
+    const fwTag = (state.forcedWin && c0!==c1) ? '（'+S.winLine+'コイン到達・強制勝利）' : '';
+    const msg = c0>c1?pname(0)+' の勝利！'+fwTag : c1>c0?pname(1)+' の勝利！'+fwTag : '引き分け';
     const lines=state.players.map(p=>'<div style="margin:6px 0">'+esc(p.name)+'：<span class="coin big">🪙 '+p.coins+'</span>　<span class="note">（獲得客 '+p.acquired.length+' 人）</span></div>').join('');
     return '<div class="topbar"><div class="sub">EVER MARKET</div>'+howtoBtn()+legendBtn()+resultsBtn()+settingsBtn()+'</div>'
       +'<div class="center" style="padding:24px 0">'
@@ -727,6 +764,7 @@
     add('judge 同点 none→null', judgeCustomer(pinA,pinB,tie,{tiebreak:'none'}).winner===null);
     add('judge 同点 both', judgeCustomer(pinA,pinB,tie,{tiebreak:'both'}).winner==='both');
     add('judge 同点 split', judgeCustomer(pinA,pinB,tie,{tiebreak:'split'}).winner==='split');
+    add('judge 両者空＝流れ（split/bothでも）', judgeCustomer(null,null,tie,{tiebreak:'split'}).winner===null && judgeCustomer(null,null,tie,{tiebreak:'both'}).winner===null);
     add('得点：勝者にvp加算', (function(){ let coins=0; const r=judgeCustomer(pinA,pinB,cX,{tiebreak:'none'}); if(r.winner===0) coins+=cX.vp; return coins===1; })());
     add('入れ替えで勝敗が変わる', (function(){ const cA={vp:1,conditions:[{axis:'motif',op:'==',value:'animal'}]}; return countSatisfied(pinB,cA)===0 && countSatisfied(pinA,cA)===1; })());
     add('全アイコン定義あり', MOTIFS.every(m=>ICON.motif[m]) && TRANSP.every(x=>ICON.transparency[x]) && SHAPES.every(x=>ICON.shape[x]));
