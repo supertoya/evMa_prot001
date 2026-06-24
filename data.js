@@ -25,10 +25,10 @@ window.EM_DATA = (function () {
     pinsPerPlayer: 20,              // 各自のピンズ総数
     pinsPerTurn: 4,                 // 毎ターン刺すピンズ数
     customersPresentedPerPlayer: 2, // 毎ターン各自が場に出す客
-    relicsDrawnPerTurn: 2,          // 毎ターン引く遺物（Phase2で使用）
+    relicsDrawnPerTurn: 1,          // 毎ターン引く遺物（Phase2・チーム決定F3＝1ドロー・持ち越し可）
     startingCoins: 3,               // 種銭（2026-06-11 チーム決定：遺物経済に向け3。⚙設定で0/3/5/8に切替可）
     vpByRarity: { C: 1, UC: 2, R: 4 }, // レア度ごとの勝利点＝獲得コイン
-    tiebreak: 'split',              // 同点客の既定（2026-06-11 チーム決定でsplitへ変更）：'split'折半(切り上げ) / 'none'流れる / 'both'両取り
+    tiebreak: 'none',               // 同点客の既定（2026-06-23 テスト結果で'none'へ：流れにすると5ターン構造が活き、運命の賽も自己補正。2026-06-11はsplitだった）：'split'折半(切り上げ) / 'none'流れる / 'both'両取り。⚙設定で切替可
     winLine: 20,                    // 強制勝利ライン（手持ちコインが達したフェーズの終了時に即勝利。0=無効。チップ循環＝各自プール20枚の物理表現）
     unplacedPin: 'carry',           // 余ったピンの扱い（Phase1では未使用）
     randomSeed: true,               // true=毎回ランダム（チーム試遊向き）／false=rngSeedで固定（再現・デバッグ用）
@@ -105,9 +105,58 @@ window.EM_DATA = (function () {
       conditions:[ {axis:'transparency',op:'==',value:'transparent'}, {axis:'symmetry',op:'==',value:true}, {axis:'living',op:'==',value:false}, {axis:'size_mm',op:'<=',value:20}, {axis:'motif',op:'==',value:'nature'} ] },
   ];
 
-  // ---- 遺物・主人公（Phase2/3 で実装。構造だけ用意）---------------------
-  const RELIC_POOL = [];
-  const HERO_POOL = [];
+  // ---- 遺物（Phase2）-----------------------------------------------------
+  //  cost   : 使用コイン（払うと最終得点が減る＝単一プール経済）
+  //  timing : いつ使えるか（'adjust'=調整手番中／'postReveal'=公開直後の同時伏せ宣言／'declare'=判定直前の同時伏せ宣言）
+  //  target : 何を選ぶか（'selfSlot'=自分のピン1つ／'oppSlot'=相手のピン1つ／'cust2'=客2人(入れ替え)／'custSlot'=客1人）
+  //  consumesTurn : 使うと自分の手番を消費するか（調整系のみ）
+  //  effect : index.html が解釈する効果キー（plusSwapSelf/minusSwapOpp=調整／plusJudgeSelf/minusJudgeOpp=判定補正／swapCustomers=客入替／removeCustomer=客除外）
+  //  ※Phase2：調整中(砂/錘)＋判定直前(盃/呪印)＋公開直後(誘いの香)を実装。順次14種（忘却/賽/楔 …）へ拡張予定。
+  const RELIC_POOL = [
+    { id:'rel_suna',  name:'砂の還流', system:'砂時計 ─ 巻戻', cost:1, timing:'adjust', consumesTurn:false, effect:'plusSwapSelf',
+      text:'このターン、自分の入替上限を +1 する。' },
+    { id:'rel_omori', name:'沈黙の錘', system:'錘 ─ 重圧',     cost:1, timing:'adjust', consumesTurn:false, effect:'minusSwapOpp',
+      text:'相手の残り入替を 1 減らす（2026-06-23テスト調整：コスト1・手番は消費しない。旧=コスト2・手番消費で死に札だった）。' },
+    { id:'rel_sakazuki', name:'満ちる盃',   system:'盃 ─ 充溢',   cost:2, timing:'declare', target:'selfSlot', consumesTurn:false, effect:'plusJudgeSelf',
+      text:'判定直前。自分のピン1つを、その客の判定で「満たした条件数 +1」として扱う。' },
+    { id:'rel_juin',     name:'凋落の呪印', system:'髑髏 ─ 呪詛', cost:2, timing:'declare', target:'oppSlot',  consumesTurn:false, effect:'minusJudgeOpp',
+      text:'判定直前。相手のピン1つを、その客の判定で「満たした条件数 −1」として扱う。' },
+    { id:'rel_kaori',    name:'誘いの香',   system:'香炉 ─ 誘引', cost:1, timing:'postReveal', target:'cust2', consumesTurn:false, effect:'swapCustomers',
+      text:'公開直後。場の客2人の位置を入れ替える（両者の対応に影響）。' },
+    { id:'rel_dokuro',   name:'忘却の髑髏', system:'髑髏 ─ 呪詛', cost:2, timing:'postReveal', target:'custSlot', consumesTurn:false, effect:'removeCustomer',
+      text:'公開直後。客1人を場から取り除く（誰も獲得できない＝流れ）。' },
+    { id:'rel_utage',    name:'黄金の酒宴', system:'盃 ─ 充溢（大）', cost:4, timing:'declare', target:'allSelf', consumesTurn:false, effect:'plusJudgeAllSelf',
+      text:'判定直前。このターン、自分のピン全部を「満たした条件数 +1」として扱う。' },
+    { id:'rel_kusabi',   name:'不動の楔',   system:'楔 ─ 不動',   cost:1, timing:'postReveal', target:'custSlot', consumesTurn:false, effect:'lockCustomer',
+      text:'公開直後。客1人を指定。このターン、その客は移動も除外もされない（誘いの香／忘却の髑髏を防ぐ）。' },
+    { id:'rel_men',      name:'偽相の仮面', system:'仮面 ─ 偽相', cost:2, timing:'declare', target:'selfSlot', consumesTurn:false, effect:'maskMotifSelf',
+      text:'判定直前。自分のピン1つの「絵柄」を任意の値として扱う（その客の絵柄条件を満たす）。' },
+    { id:'rel_sai',      name:'運命の賽', system:'賽 ─ 賭博',   cost:1, timing:'adjust', consumesTurn:false, effect:'betWin',
+      text:'調整中に宣言。このターン、客を2人以上獲得したら +3コイン。1人以下なら掛け金（1コイン）は戻らない。' },
+    { id:'rel_rashin',   name:'導きの羅針', system:'羅針 ─ 先見', cost:1, timing:'cleanup', target:'none', consumesTurn:false, effect:'peekNext',
+      text:'片付け時。次のターンに自分が出す客2枚を先に見る（情報のみ・相手には伏せたまま）。' },
+  ];
+  // 遺物山（各自同一構成・毎ターン1ドロー・持ち越し可・10枚）＝正本の確定プリセット10種各1。
+  // 香/忘却/錘/砂/賽/盃/呪印/楔/羅針/仮面。※黄金の酒宴(utage)は「構築解禁時」枠のため、毎ターン引く山には入れない。
+  const PRESET_RELICS = ['rel_kaori','rel_dokuro','rel_omori','rel_suna','rel_sai','rel_sakazuki','rel_juin','rel_kusabi','rel_rashin','rel_men'];
+
+  // ---- 主人公（Phase3）：12の欲。各 normal=パッシブ（常時自動）／special=必殺技（Phase3.5で実装予定・未登載）----
+  //  normal.kind: startCoins / gainOnAcquireRarity / gainOnFlow / gainOnDominate（Slice Aで実装）
+  //               relicCostDown / peekOwnThisTurn / claimFirstFlow / immuneToMinus / chooseSecond / stealOnOppHighVp / wildMotifSlot / betRefundPlus（以降のスライスで実装）
+  const HERO_POOL = [
+    { id:'hero_muyoku',   desire:'無欲', name:'ヴァルニエル',          normal:{ kind:'relicCostDown',       n:1, min:1,            text:'自分が支払う遺物コストを常に 1 減らす（最低1）。' } },
+    { id:'hero_chishiki', desire:'知識', name:'ヴィオラ・セルンティア', normal:{ kind:'peekOwnThisTurn',      n:2,                  text:'仕込みの前に、このターン自分が出す客2枚を見られる。' } },
+    { id:'hero_ouken',    desire:'王権', name:'ガッヅォル・レグシオール', normal:{ kind:'claimFirstFlow',                            text:'各ターン、同点で流れる客のうち最初の1人を獲得する。' } },
+    { id:'hero_fukyu',    desire:'不朽', name:'リーノ・マルモット',      normal:{ kind:'immuneToMinus',                            text:'自分のピンは「条件数 −1」系（凋落の呪印 等）の対象にならない。' } },
+    { id:'hero_shokuyoku',desire:'食欲', name:'リリゲウ',              normal:{ kind:'gainOnAcquireRarity', rarity:'C', perTurn:1, perGame:4, text:'C客を獲得するたび +1コイン（ターン上限1・試合上限4）。' } },
+    { id:'hero_suimin',   desire:'睡眠', name:'チュウカット・アンモク',  normal:{ kind:'chooseSecond',                             text:'先行/後攻の決定時、常に後攻を選べる。' } },
+    { id:'hero_seiyoku',  desire:'性欲', name:'セラフィカ・ディエンダス', normal:{ kind:'stealOnOppHighVp',    minVp:2, perTurn:1, perGame:3, text:'相手がUC/R客を獲得するたび、相手から1コインが自分へ移る（ターン上限1・試合上限3）。' } },
+    { id:'hero_kinsen',   desire:'金銭', name:'クラウベ・サトリ',        normal:{ kind:'startCoins',          n:2,                  text:'試合開始時、種銭として +2コインを得る。' } },
+    { id:'hero_butsuyoku',desire:'物欲', name:'シジマ・ノーメン',        normal:{ kind:'gainOnFlow',          perTurn:1,            text:'流れた客1人につき +1コイン（ターン上限1）。' } },
+    { id:'hero_jiyu',     desire:'自由', name:'ナギ・レス',            normal:{ kind:'wildMotifSlot',       slot:1,               text:'陳列②に置いたピンは「絵柄」条件を常に満たす扱い。' } },
+    { id:'hero_yukyo',    desire:'遊興', name:'フルル・メモタン',        normal:{ kind:'betRefundPlus',       n:1,                  text:'運命の賽の賭けに成功すると、支払ったコインが戻りさらに +1。' } },
+    { id:'hero_toso',     desire:'闘争', name:'デスデス・モルテシオン',  normal:{ kind:'gainOnDominate',      margin:2, perTurn:2,    text:'条件差2以上で客に競り勝つたび +1コイン（ターン上限2）。' } },
+  ];
 
   // ---- 見本デッキの自動構築（プールから決め打ちで選ぶ）------------------
   // プールを編集すれば、デッキも自動で追従します。
@@ -141,5 +190,5 @@ window.EM_DATA = (function () {
     p1: { pins: buildPinDeck(7), customers: buildCustomerDeck(2) },
   };
 
-  return { CONFIG, PIN_POOL, CUSTOMER_POOL, RELIC_POOL, HERO_POOL, PRESET_DECKS };
+  return { CONFIG, PIN_POOL, CUSTOMER_POOL, RELIC_POOL, HERO_POOL, PRESET_DECKS, PRESET_RELICS };
 })();
