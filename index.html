@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>永遠闇市 — プロトタイプ (Phase 1)</title>
+<title>永遠闇市 — シミュレーター (Phase 2)</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DotGothic16&display=swap" rel="stylesheet">
 <style>
@@ -113,6 +113,9 @@
   .ppin.me{border-color:#160f07; background:linear-gradient(180deg,#231a0d,#1b1409);}
   .ppin.lead{box-shadow:0 0 10px rgba(127,224,160,.40), inset 0 3px 9px rgba(0,0,0,.45); border-color:var(--good);}
   .ppin.click{cursor:pointer;} .ppin.click:hover{box-shadow:0 0 12px rgba(244,160,42,.5), inset 0 3px 9px rgba(0,0,0,.45);}
+  @keyframes tapwait{0%,100%{box-shadow:0 0 0 rgba(244,160,42,0), inset 0 3px 9px rgba(0,0,0,.45);} 50%{box-shadow:0 0 16px rgba(244,160,42,.75), inset 0 3px 9px rgba(0,0,0,.45);}}
+  .ppin.await{cursor:pointer; border-color:var(--orange); animation:tapwait 1.25s ease-in-out infinite;}
+  .pcard.await{cursor:pointer; outline:2px solid var(--orange); outline-offset:1px; animation:tapwait 1.25s ease-in-out infinite;}
   .ppin.selA{border-color:var(--orange); box-shadow:0 0 14px rgba(244,160,42,.6), inset 0 3px 9px rgba(0,0,0,.45); background:#1a130a;}
   .ppin .ttl{font-size:12px; color:var(--gold);} .ppin.opp .ttl{color:var(--blue);}
   .ppin .cnt{float:right; color:var(--ink); font-size:11px;}
@@ -172,6 +175,41 @@
   .scorebar{display:flex; gap:14px; font-size:13px;}
   .testrow{font-size:12px; padding:2px 0; border-bottom:1px solid #1b212a;}
   .ok{color:var(--good);} .ng{color:var(--bad);}
+
+  /* ---- 遺物の手札（紙カード＋金貨コスト） ---- */
+  .rhand{margin-top:10px; border:2px solid var(--line); border-radius:10px; padding:9px 11px; background:rgba(20,26,35,.55);}
+  .rh-label{display:block; color:var(--gold); font-size:12px; margin-bottom:7px;}
+  .rrow{display:flex; gap:10px; flex-wrap:wrap;}
+  .rcard{position:relative; width:212px; border-radius:8px; padding:9px 11px 11px; color:#3c3426;
+    background:linear-gradient(180deg,#ece2c8,#ded2b2); border:1.5px solid #b3a685; box-shadow:0 4px 9px rgba(0,0,0,.5);}
+  .rcard.disabled{filter:grayscale(.55) brightness(.93);}
+  .rcard .rcost{position:absolute; top:8px; right:9px; width:26px; height:26px; border-radius:50%;
+    background:#c9a14a; color:#3a2a08; display:flex; align-items:center; justify-content:center; font-size:14px;
+    box-shadow:inset 0 0 0 2px rgba(255,255,255,.3), 0 1px 3px rgba(0,0,0,.4);}
+  .rcard .rnm{font-size:14px; color:#2e2719; padding-right:30px;}
+  .rcard .rsys{font-size:11px; color:#7a6e54; letter-spacing:.06em; margin-top:1px;}
+  .rcard .rtx{font-size:12px; color:#46402f; margin:5px 0 9px; min-height:34px; line-height:1.5;}
+  .rcard .btn{width:100%;}
+  .rcard.dim{filter:grayscale(.55) brightness(.9) opacity(.78);}                 /* 今は使えないタイミングの遺物（待機） */
+  .rcard.usable{border-color:var(--gold); box-shadow:0 0 0 2px var(--gold), 0 0 16px rgba(201,161,74,.6), 0 4px 9px rgba(0,0,0,.5);} /* 今使える＝発光 */
+  .rcard .rnow{display:inline-block; font-size:10px; color:#3a2a08; background:var(--gold); border-radius:4px; padding:0 5px; margin-left:5px; vertical-align:middle;}
+  /* フェーズ進行バー（上部・横向き・5フェーズ） */
+  .pbar{display:flex; align-items:center; gap:3px; flex-wrap:wrap; margin:8px 0 2px;}
+  .pstep{font-size:11px; border-radius:7px; padding:3px 9px; border:1px solid transparent; white-space:nowrap;}
+  .pstep.done{background:rgba(201,161,74,.08); border-color:#43412f; color:#9b8f6c;}
+  .pstep.cur{background:linear-gradient(180deg,#e3c477,#c9a14a); border-color:#f0d999; color:#2a1f08; font-weight:500; box-shadow:0 0 12px rgba(201,161,74,.55);}
+  .pstep.todo{border:1px dashed #39414f; color:#6b7382;}
+  .pstep .pchk{color:var(--gold);}
+  /* 主人公選択 */
+  .hgrid{display:grid; grid-template-columns:repeat(auto-fill,minmax(210px,1fr)); gap:10px; padding:0 4px 28px;}
+  .hcard{border:2px solid var(--line); border-radius:9px; padding:10px 12px; cursor:pointer; background:linear-gradient(180deg,#1a2030,#141a26); transition:.12s ease-out;}
+  .hcard:hover{border-color:var(--orange); box-shadow:0 0 14px rgba(244,160,42,.35);}
+  .hcard .hd{font-size:11px; color:var(--blue); letter-spacing:.16em;}
+  .hcard .hn{font-size:15px; color:#cfe6f0; margin:2px 0 5px;}
+  .hcard .hb{font-size:12px; color:var(--ink); line-height:1.6; min-height:46px;}
+  .hcard .hf{font-size:10px; margin-top:6px; color:var(--good);}
+  .hcard.soon{opacity:.62;} .hcard.soon .hf{color:var(--dim);}
+  .psep{color:#4a525f; font-size:11px;}
 </style>
 </head>
 <body>
@@ -203,12 +241,29 @@
   function satisfies(pin,c){ const v=pin[c.axis];
     switch(c.op){ case '==':return v===c.value; case '!=':return v!==c.value; case '>=':return v>=c.value; case '<=':return v<=c.value; default:return false; } }
   function countSatisfied(pin,cust){ if(!pin) return 0; return cust.conditions.reduce((n,c)=>n+(satisfies(pin,c)?1:0),0); }
-  function judgeCustomer(pin0,pin1,cust,cfg){
-    if(!pin0 && !pin1) return {winner:null, n0:0, n1:0};   // 誰も商品を出していない客は帰る（同点処理の設定に関わらず流れ。将来の「5客目」系の整合）
-    const n0=countSatisfied(pin0,cust), n1=countSatisfied(pin1,cust); let winner;
+  function judgeCustomer(pin0,pin1,cust,cfg,bonus0,bonus1){
+    bonus0=bonus0||0; bonus1=bonus1||0;                    // 判定直前の遺物（盃=自分+1／呪印=相手-1／酒宴=全+1）の条件数補正
+    if(!pin0 && !pin1) return {winner:null, n0:0, n1:0};   // 誰も商品を出していない客は帰る（補正でも復活させない）
+    const n0=countSatisfied(pin0,cust)+bonus0, n1=countSatisfied(pin1,cust)+bonus1; let winner;
     if(n0===n1){ winner = cfg.tiebreak==='both'?'both' : cfg.tiebreak==='split'?'split' : null; }
     else winner = n0>n1?0:1;
     return {winner,n0,n1};
+  }
+  /* ---------- 遺物の効果（state を受け取り効果を適用） ---------- */
+  function applyRelic(st, pi, r){
+    switch(r.effect){
+      case 'plusSwapSelf': st.changesLeft[pi] += 1; break;                                   // 砂の還流：自分の入替+1
+      case 'minusSwapOpp': st.changesLeft[1-pi] = Math.max(0, st.changesLeft[1-pi] - 1); break; // 沈黙の錘：相手の入替-1
+      case 'betWin': if(st.bet) st.bet[pi]=true; break;                                       // 運命の賽：このターンの「賭け」を宣言（精算は判定時 betPayoff）
+    }
+  }
+  /* 運命の賽の精算：このターンに獲得した客数(won)に応じた追加コイン（2人以上で+3／1人以下は0＝掛け金は戻らない）。純粋関数でテスト可能。 */
+  function betPayoff(won){ return won>=2 ? 3 : 0; }
+  /* 判定直前の遺物：誰の達成数を幾つ動かすか（盃=自分+1／呪印=相手-1）。純粋関数でテスト可能。 */
+  function relicJudgeDelta(effect, pi){
+    if(effect==='plusJudgeSelf') return { p:pi,   d:+1 };   // 満ちる盃：自分のピン+1
+    if(effect==='minusJudgeOpp') return { p:1-pi, d:-1 };   // 凋落の呪印：相手のピン-1
+    return null;
   }
 
   /* ---------- データ検証 ---------- */
@@ -236,6 +291,17 @@
         if(!['size_mm','transparency','hasText','count','living','motif','shape','symmetry'].includes(cd.axis)) e.push('客 '+c.id+' 条件'+(i+1)+': axis が不正 ('+cd.axis+')');
         if(!['==','!=','>=','<='].includes(cd.op)) e.push('客 '+c.id+' 条件'+(i+1)+': op が不正 ('+cd.op+')');
       });
+    });
+    (D.RELIC_POOL||[]).forEach(r=>{
+      if(typeof r.cost!=='number') e.push('遺物 '+(r.id||'?')+': cost が数字ではありません');
+      if(!r.effect) e.push('遺物 '+(r.id||'?')+': effect が未定義です');
+      if(r.timing && !['adjust','postReveal','declare','cleanup'].includes(r.timing)) e.push('遺物 '+(r.id||'?')+': timing が不正 ('+r.timing+')');
+      if(/Judge(Self|Opp)$|swapCustomers|removeCustomer/.test(r.effect||'') && !r.target) e.push('遺物 '+(r.id||'?')+': 対象指定が必要な効果に target がありません');
+    });
+    (D.HERO_POOL||[]).forEach(h=>{
+      if(!h.id) e.push('主人公: id がありません');
+      if(!h.desire||!h.name) e.push('主人公 '+(h.id||'?')+': desire/name がありません');
+      if(!h.normal||!h.normal.kind||!h.normal.text) e.push('主人公 '+(h.id||'?')+': normal(kind/text) がありません');
     });
     return e;
   }
@@ -341,7 +407,8 @@
       +'<tr><td>① 仕込み</td><td>客が見えない状態で、手持ちから商品を4つ選び①〜④に並べる（伏せ）。<b>いろいろな特性をバラけさせる</b>と、どんな客にも対応しやすい。</td></tr>'
       +'<tr><td>② 公開</td><td>客が4枚出る。<b>陳列①＝客①…と位置で対応</b>して競う。</td></tr>'
       +'<tr><td>③ 調整</td><td>先行→後攻の順に、<b>自分の商品2つの位置を入れ替え</b>（各自2回まで）。相手の出方を見て微調整。間違えたら<b>「↩ 1手戻す」</b>で取り消せる。</td></tr>'
-      +'<tr><td>④ 判定</td><td>客の条件(下の印)を<b>多く満たした側がその客を獲得</b>。同点は折半（⚙設定で変更可）。</td></tr>'
+      +'<tr><td>④ 判定</td><td>客の条件(下の印)を<b>多く満たした側がその客を獲得</b>。同点はどちらも取れず流れる（⚙設定で変更可）。</td></tr>'
+      +'<tr><td>◈ 遺物</td><td>毎ターン1枚引く「遺物」を<b>コインで使う</b>と盤面を動かせる（払うと最終得点が減る）。調整中に<b>砂の還流</b>（自分の入替+1）／<b>沈黙の錘</b>（相手の入替-1）。</td></tr>'
       +'<tr><td>商品の見方</td><td>トークンの<b>形・大きさ・透け・中央の紋様・刻印</b>＝特性。<b>色＝絵柄の種類／鮮やか＝生物</b>。📖凡例に詳細、マウスを乗せると値が出ます。</td></tr>'
       +'</tbody></table>'
       +'<div class="center" style="margin-top:12px"><button class="btn primary sm" onclick="EM.closeHowto()">はじめる ▶</button></div>'
@@ -399,13 +466,16 @@
   }
   /* ----- 設定（テスト用・localStorageに保存） ----- */
   const SKEY='em_settings_v1';
-  function defaultSettings(){ return { startingCoins:CFG.startingCoins, turns:CFG.turns, tiebreak:CFG.tiebreak, randomSeed:CFG.randomSeed!==false, deckMode:'normal', firstMover:'alternate', winLine:(CFG.winLine!=null?CFG.winLine:20) }; }
+  function defaultSettings(){ return { startingCoins:CFG.startingCoins, turns:CFG.turns, tiebreak:CFG.tiebreak, randomSeed:CFG.randomSeed!==false, deckMode:'normal', firstMover:'trailing', winLine:(CFG.winLine!=null?CFG.winLine:20), declareWindow:'always', relicLimit:'perWindow' }; }
   function loadSettings(){ try{return JSON.parse(localStorage.getItem(SKEY)||'{}');}catch(e){return {};} }
   function saveSettings(o){ try{localStorage.setItem(SKEY,JSON.stringify(o));}catch(e){} }
   let S = Object.assign(defaultSettings(), loadSettings());
-  // 2026-06-11 既定変更（同点=折半／種銭3／強制勝利20）：winLine未導入時代の保存設定を、一度だけ新既定へ移行
-  // ※ data.js が旧キャッシュでも正しく移行できるよう、決定値を直書き（CFG参照にしない）
-  if(!('winLine' in loadSettings())){ S.tiebreak='split'; S.startingCoins=3; S.winLine=20; saveSettings(S); }
+  // 既定変更の移行（決定値は直書き＝data.jsの旧キャッシュに依存しない）
+  // v1（2026-06-11）：winLine未導入の保存 → 同点=折半／種銭3／強制勝利20
+  // v2（2026-06-12）：既定の先行を「劣勢側先行」へ
+  { const raw=loadSettings();
+    if(!('winLine' in raw)){ S.tiebreak='split'; S.startingCoins=3; S.winLine=20; }
+    if((raw.sv||0)<2){ S.firstMover='trailing'; S.sv=2; saveSettings(S); } }
   S.turns = Math.min(S.turns||CFG.turns, Math.floor(CFG.pinsPerPlayer/CFG.pinsPerTurn)); // ピン枯渇によるソフトロック防止
   function jsv(v){ return typeof v==='string'?("'"+v+"'"):String(v); }
   function settingsBtn(){ return '<button class="btn ghost sm" onclick="EM.toggleSettings()">⚙ 設定</button>'; }
@@ -421,12 +491,15 @@
       +optRow('強制勝利','winLine',[{v:20,label:'20'},{v:22,label:'22'},{v:25,label:'25'},{v:0,label:'なし'}])
       +optRow('展開','randomSeed',[{v:true,label:'毎回ランダム'},{v:false,label:'固定シード'}])
       +optRow('デッキ','deckMode',[{v:'normal',label:'通常(左右別)'},{v:'mirror',label:'ミラー(同一)'}])
-      +optRow('先行','firstMover',[{v:'alternate',label:'毎ターン交代'},{v:'trailing',label:'劣勢側が先行'},{v:'fixed',label:'P1固定'}])
+      +optRow('先行','firstMover',[{v:'trailing',label:'劣勢側が先行'},{v:'alternate',label:'毎ターン交代'},{v:'fixed',label:'P1固定'}])
+      +optRow('宣言の窓（遺物）','declareWindow',[{v:'always',label:'常に表示(空でも)'},{v:'whenUsable',label:'使える時だけ'}])
+      +optRow('遺物の枚数','relicLimit',[{v:'perWindow',label:'各窓1枚'},{v:'perTurn',label:'1ターン1枚'}])
       +'</tbody></table>'
       + ((S.deckMode==='mirror' && (S.tiebreak==='both'||S.firstMover==='fixed')) ? '<div class="note" style="color:var(--bad);margin-top:8px">⚠ ミラー＋'+(S.tiebreak==='both'?'両取り':'')+((S.tiebreak==='both'&&S.firstMover==='fixed')?'・':'')+(S.firstMover==='fixed'?'P1固定':'')+' は退化的になりやすい組合せ（毎回引分／先行が圧勝）。避けるのが無難です。</div>' : '')
       + ((S.tiebreak==='both' && S.winLine>0) ? '<div class="note" style="color:var(--bad);margin-top:8px">⚠ 両取り＋強制勝利は経済が膨らみ2〜3ターンで決着しがち。テスト目的以外では避けるのが無難です。</div>' : '')
       +'<div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap"><button class="btn primary sm" onclick="EM.newWithSettings()">この設定で新規対戦 ▶</button><button class="btn sm" onclick="EM.applyFairPreset()">⚖ 公平比較プリセット</button><button class="btn ghost sm" onclick="EM.resetSettings()">既定に戻す</button></div>'
       +'<div class="note" style="margin-top:4px">公平比較＝ミラー＋劣勢先行＋折半（デッキ差・先行偏りを抑えて腕と運を比較）。</div>'
+      +'<div class="note" style="margin-top:4px">「宣言の窓」＝<b>常に表示</b>だと毎ターン窓が出て手札なしも分かる（窓の有無で情報が漏れない）。<b>使える時だけ</b>はテンポ優先。「遺物の枚数」＝公開直後と判定直前を<b>各窓1枚</b>（=1ターン最大2枚）か<b>1ターン1枚</b>か。どちらも試作の検証用トグル。</div>'
       +'</div></div>';
   }
   function instPins(ids){ const m={}; return ids.map(id=>{ const def=D.PIN_POOL.find(p=>p.id===id); m[id]=(m[id]||0)+1; return Object.assign({},def,{iid:id+'#'+m[id]}); }); }
@@ -440,13 +513,37 @@
       // アクセサリーケースの並び＝絵柄→大きさで整列（ゲーム中は固定。使うと空き区画が残る）
       const caseOrder=sup.slice().sort((a,b)=> MOTIFS.indexOf(a.motif)-MOTIFS.indexOf(b.motif) || a.size_mm-b.size_mm || (a.iid<b.iid?-1:1));
       return { id:pid, name, coins:S.startingCoins, supply:sup, caseOrder,
-        customerDeck:shuffle(instCustomers(D.PRESET_DECKS[deckOf(pid)].customers),rng), acquired:[], stock:[] }; };
+        customerDeck:shuffle(instCustomers(D.PRESET_DECKS[deckOf(pid)].customers),rng),
+        relicDeck:shuffle((D.PRESET_RELICS||[]).slice(),rng), relicHand:[],
+        acquired:[], stock:[], hero:null, heroCnt:{} }; };
     state={ turn:0, phase:null, field:[], mode:lastMode, seed:seed, flowed:0, forcedWin:false, players:[mk('p0','プレイヤー1'),mk('p1', lastMode==='ai'?'AI':'プレイヤー2')] };
+    beginHeroSelect(rng);
+  }
+  /* ----- 主人公の選択（試合開始時・公開）。AIはランダム／ミラーは両者同一（ユーザー決定 2026-06-23）----- */
+  function beginHeroSelect(rng){
+    if(state.mode==='ai'){ const H=D.HERO_POOL||[]; state.players[1].hero = H[Math.floor((rng?rng():Math.random())*H.length)]||null; } // AIは毎回ランダム
+    state.heroPick = nextHeroPicker(0);
+    if(state.heroPick==null){ finalizeHeroes(); return; }   // 全員自動決定（データ無し等）→そのまま開始
+    state.phase='heroSelect'; render();
+  }
+  function nextHeroPicker(from){
+    for(let i=from;i<2;i++){
+      if(S.deckMode==='mirror' && i===1){ state.players[1].hero=state.players[0].hero; continue; } // ミラー＝両者同一
+      if(state.mode==='ai' && i===1) continue;            // AIは設定済み
+      if(state.players[i].hero) continue;                 // 既に選択済み
+      return i;
+    }
+    return null;
+  }
+  function finalizeHeroes(){
+    state.players.forEach(p=>{ const n=p.hero&&p.hero.normal; if(n&&n.kind==='startCoins'){ p.coins += (n.n||0); } }); // 金銭：種銭+2（試合開始時パッシブ）
     nextTurnStart();
   }
   function nextTurnStart(){
     state.turn++;
     if(state.turn>S.turns){ state.phase='gameover'; recordResult(); render(); return; }
+    const nd=CFG.relicsDrawnPerTurn||1;                                  // 毎ターン開始時に遺物を引く（持ち越し可・上限なし）
+    state.players.forEach(p=>{ for(let i=0;i<nd;i++){ if(p.relicDeck&&p.relicDeck.length) p.relicHand.push(p.relicDeck.shift()); } });
     state.field=[]; state.stockStep=0; sel=null;
     state.players.forEach(p=>{ p.stock=new Array(NPINS).fill(null); });
     state.phase = (state.mode==='ai') ? 'stock' : 'stockHandoff'; render(); // ソロは相手に隠す必要がないので直接仕込みへ
@@ -471,9 +568,18 @@
   let _aiUse=null;
   function aiUsefulness(p){ if(!_aiUse) _aiUse={}; if(_aiUse[p.id]!=null) return _aiUse[p.id]; let s=0; D.CUSTOMER_POOL.forEach(c=>s+=countSatisfied(p,c)); return _aiUse[p.id]=s/D.CUSTOMER_POOL.length; }
   function aiStock(p){ const sup=stockAvail(p).slice().sort((a,b)=>aiUsefulness(b)-aiUsefulness(a)); state.players[p].stock=sup.slice(0,NPINS); }
-  function aiWonVP(p){ let v=0; state.field.forEach(f=>{ const r=judgeCustomer(f.placed[0],f.placed[1],f.customer,S); if(r.winner===p||r.winner==='both') v+=f.customer.vp; else if(r.winner==='split') v+=Math.ceil(f.customer.vp/2); }); return v; }
+  function aiWonVP(p){ let v=0; state.field.forEach(f=>{ if(f.removed) return; const r=judgeCustomer(f.placed[0],f.placed[1],f.customer,S); if(r.winner===p||r.winner==='both') v+=f.customer.vp; else if(r.winner==='split') v+=Math.ceil(f.customer.vp/2); }); return v; }
   function aiBestSwap(p){ const base=aiWonVP(p); let best=null,bg=0,F=state.field; for(let i=0;i<F.length;i++)for(let j=i+1;j<F.length;j++){ const t=F[i].placed[p];F[i].placed[p]=F[j].placed[p];F[j].placed[p]=t; const g=aiWonVP(p)-base; const u=F[i].placed[p];F[i].placed[p]=F[j].placed[p];F[j].placed[p]=u; if(g>bg){bg=g;best={i,j};} } return best; }
-  function aiTakeTurn(){ state.adjHistory.push(adjSnapshot(1,'ai')); if(state.changesLeft[1]<=0){ state.passStreak++; return; } const sw=aiBestSwap(1); if(sw){ const t=state.field[sw.i].placed[1]; state.field[sw.i].placed[1]=state.field[sw.j].placed[1]; state.field[sw.j].placed[1]=t; state.changesLeft[1]--; state.passStreak=0; } else state.passStreak++; }
+  function aiProjWins(pi){ let n=0; state.field.forEach(f=>{ if(f.removed) return; const r=judgeCustomer(f.placed[0],f.placed[1],f.customer,S); if(r.winner===pi||r.winner==='both'||r.winner==='split') n++; }); return n; } // このターン獲得しそうな客数（折半/両取りも数える＝運命の賽の判断用）
+  function aiHasRelic(pi,id){ return (state.players[pi].relicHand||[]).indexOf(id)>=0; }
+  function aiApplyRelic(pi,id){ const P=state.players[pi], r=relicDef(id), k=P.relicHand.indexOf(id); if(k<0||!r) return false; const cost=heroCost(pi,r); if(P.coins<cost) return false; P.coins-=cost; P.relicHand.splice(k,1); applyRelic(state,pi,r); state.adjHistory=[]; return true; } // 調整中遺物をAIが適用（手番制御はaiTakeTurn側で扱う＝UIのuseRelicは呼ばない）。遺物使用は確定＝「1手戻す」で戻せない（人間のuseRelicと同じ）
+  function aiTakeTurn(){ state.adjHistory.push(adjSnapshot(1,'ai')); const P=state.players[1];
+    if(!state.bet[1] && aiHasRelic(1,'rel_sai') && P.coins>=1 && aiProjWins(1)>=2) aiApplyRelic(1,'rel_sai');                  // 運命の賽：2人以上獲得しそうなら賭ける（手番継続）
+    if(aiHasRelic(1,'rel_suna') && P.coins>=1 && state.changesLeft[1]<=1 && aiBestSwap(1)) aiApplyRelic(1,'rel_suna');         // 砂の還流：残り入替が少なく有益な入替が残るなら+1（手番継続）
+    if(state.changesLeft[1]>0){ const sw=aiBestSwap(1); if(sw){ const t=state.field[sw.i].placed[1]; state.field[sw.i].placed[1]=state.field[sw.j].placed[1]; state.field[sw.j].placed[1]=t; state.changesLeft[1]--; state.passStreak=0; return; } }
+    if(aiHasRelic(1,'rel_omori') && P.coins>=1 && state.changesLeft[0]>0 && aiBestSwap(0)){ aiApplyRelic(1,'rel_omori'); state.passStreak=0; return; } // 沈黙の錘：自分に有益な入替が無く、相手は得しそう→妨害（c1・手番非消費）
+    state.passStreak++; }                                                                                                      // 打つ手なし＝パス
+  // ※片付けの導きの羅針はAI未使用（情報のみで、AIの仕込み aiStock は先読みを使わないため利得が無い）。楔も相手の伏せを読めず評価不能のため未使用。
 
   /* ----- 公開＋調整 ----- */
   function revealAndAdjust(){
@@ -484,10 +590,15 @@
     if(S.firstMover==='fixed') first=0;
     else if(S.firstMover==='trailing') first=(c0<c1?0:(c1<c0?1:(state.turn-1)%2));
     else first=(state.turn-1)%2;
+    { const s0=heroNormal(0,'chooseSecond'), s1=heroNormal(1,'chooseSecond'); if(s0&&!s1) first=1; else if(s1&&!s0) first=0; }   // 睡眠：常に後攻を選ぶ（相手が先行・両者睡眠は通常）
     state.firstThisTurn=first; state.adjustActive=first;
     state.changesLeft=[ADJ_MAX,ADJ_MAX]; state.passStreak=0; state.adjSel=null; state.adjHistory=[];
-    state.phase='adjust'; adjKickoff();
+    state.judgeDelta=null; state.declarations=[null,null]; state.declLog=[]; state.declSel=null; state.declaredThisTurn=[false,false]; // 遺物の宣言（毎ターン初期化）
+    state.bet=[false,false]; state.betWon=[0,0];   // 運命の賽：このターンの賭け宣言と獲得人数（毎ターン初期化）
+    state.heroTurn=[{},{}];                          // 主人公パッシブのターン上限カウンタ（毎ターン初期化）
+    beginDeclareWindow('postReveal');   // 公開直後の遺物（誘いの香 等）→ 使える遺物が無ければ即 startAdjust()
   }
+  function startAdjust(){ state.phase='adjust'; adjKickoff(); }
   /* ----- 1手戻す（調整フェーズ限定のアンドゥ） ----- */
   function adjSnapshot(by,kind){ return { by, kind, placed:state.field.map(f=>f.placed.slice()), changesLeft:state.changesLeft.slice(), passStreak:state.passStreak, active:state.adjustActive }; }
   function canUndoAdj(){ const h=state.adjHistory; if(!h||!h.length) return false; return state.mode==='ai' ? h.some(x=>x.by===0) : true; }
@@ -504,10 +615,25 @@
     const a=state.adjSel,b=i,t=state.field[a].placed[p]; state.field[a].placed[p]=state.field[b].placed[p]; state.field[b].placed[p]=t;
     state.changesLeft[p]--; state.adjSel=null; state.passStreak=0; adjAfterMove(); }
   function adjPass(){ state.adjHistory.push(adjSnapshot(state.adjustActive,'pass')); state.adjSel=null; state.passStreak++; adjAfterMove(); }
+  /* ----- 遺物の使用（調整中・自分の手番） ----- */
+  function useRelic(rid){
+    if(!state || state.phase!=='adjust') return;
+    const pi=state.adjustActive, P=state.players[pi]; const r=relicDef(rid); if(!r) return;
+    const k=P.relicHand.indexOf(rid); if(k<0) return;                 // 手札に無い
+    if(r.timing!=='adjust') return;                                   // このスライスは「調整中」の遺物のみ
+    const cost=heroCost(pi,r);                                        // 無欲＝コスト−1（最低1）
+    if(P.coins < cost) return;                                        // コイン不足
+    P.coins -= cost;                                                  // 支払い＝最終得点が減る（単一プール）
+    P.relicHand.splice(k,1);                                          // 手札から消費
+    applyRelic(state, pi, r);                                         // 効果を適用
+    state.adjHistory=[]; state.adjSel=null;                           // 遺物使用は確定（ここより前へは戻せない）
+    if(r.consumesTurn){ state.passStreak=0; adjAfterMove(); }         // 手番を消費（錘）→ 相手へ
+    else render();                                                    // 手番継続（砂）
+  }
   function adjEnded(){ return state.passStreak>=2 || (state.changesLeft[0]<=0 && state.changesLeft[1]<=0); }
   function adjAfterMove(){ // 直前の手（入替/パス）でpassStreak更新済み → 手番交代しAI/自動パスを進め、人間の番か終了で止める
     while(true){
-      if(adjEnded()){ doReveal(); return; }
+      if(adjEnded()){ beginDeclareWindow('declare'); return; }   // 調整終了→判定直前の宣言（使える遺物が無ければ即判定）
       state.adjustActive = 1-state.adjustActive; state.adjSel=null;
       const a=state.adjustActive;
       if(state.changesLeft[a]<=0){ state.passStreak++; continue; }       // 変更切れ→自動パス、再度交代
@@ -521,19 +647,163 @@
     if(state.mode==='ai' && a===1){ aiTakeTurn(); adjAfterMove(); return; }
     render();
   }
+  /* ----- 遺物の同時伏せ宣言ウィンドウ（公開直後 / 判定直前）＝同時伏せ → 先行側から解決（正本 2026-06-12）。各窓は1人1枚＝PD-01（保留） ----- */
+  function canDeclare(pi, timing){
+    if(S.relicLimit==='perTurn' && state.declaredThisTurn && state.declaredThisTurn[pi]) return false;   // 1ターン1枚：既に今ターン使用済み（PD-01）
+    return (state.players[pi].relicHand||[]).some(rid=>{ const r=relicDef(rid); return r && r.timing===timing && state.players[pi].coins>=heroCost(pi,r); });
+  }
+  function beginDeclareWindow(timing){
+    state.declTiming=timing;
+    const anyone = canDeclare(0,timing) || canDeclare(1,timing);
+    if(S.declareWindow!=='always' && !anyone){ continueAfterWindow(); return; }            // 「使える時だけ」かつ誰も使えない→窓を出さない（PD-02：既定は'always'で常に表示）
+    if(timing==='declare') state.judgeDelta=state.field.map(()=>[0,0]);                    // 判定補正の受け皿（判定直前のみ）
+    state.declarations=[null,null]; state.declSel=null;
+    state.declOrder=[state.firstThisTurn, 1-state.firstThisTurn];                          // 解決は先行→後攻（伏せは同時・相手の宣言は見えない）
+    state.declStep=0; declAdvance();
+  }
+  function continueAfterWindow(){ if(state.declTiming==='postReveal') startAdjust(); else doReveal(); }  // 公開直後→調整／判定直前→判定
+  function declAdvance(){
+    while(state.declStep<2){
+      const pi=state.declOrder[state.declStep], canAct=canDeclare(pi, state.declTiming);
+      if(state.mode==='ai' && pi===1){ state.declarations[pi]= canAct ? aiDeclare(1, state.declTiming) : null; state.declStep++; continue; } // AIは自動（空窓は見せない）
+      if(!canAct && S.declareWindow!=='always'){ state.declarations[pi]=null; state.declStep++; continue; }  // 「使える時だけ」：使えなければ自動パス
+      state.declSel=null;
+      state.phase = (state.mode==='ai') ? 'declare' : 'declareHandoff';                    // 'always'では使えなくても窓を表示（手札なしと分かる）
+      render(); return;
+    }
+    resolveDeclarations();
+  }
+  function resolveDeclarations(){
+    const order=[state.firstThisTurn, 1-state.firstThisTurn];       // 先行側から解決（公開直後はスロット位置で順次適用＝PD-03）
+    order.forEach(pi=>{
+      const d=state.declarations[pi]; if(!d) return;
+      const r=relicDef(d.relic); if(!r) return; const cost=heroCost(pi,r); if(state.players[pi].coins < cost) return;
+      state.players[pi].coins -= cost;                              // 支払い（無欲はコスト−1）＝最終得点が減る（単一プール）
+      const k=state.players[pi].relicHand.indexOf(d.relic); if(k>=0) state.players[pi].relicHand.splice(k,1);
+      if(state.declaredThisTurn) state.declaredThisTurn[pi]=true;   // 「1ターン1枚」設定の判定用（PD-01）
+      applyDeclaredRelic(state, pi, d, r);                          // 効果を盤面/判定補正へ反映
+      state.declLog.push({ pi, name:r.name, slot:d.slot, slot2:d.slot2, effect:r.effect, timing:r.timing });
+    });
+    continueAfterWindow();
+  }
+  /* 宣言遺物の効果適用（st を受け取り反映）。判定補正は judgeDelta、客入替/除外は field を操作（テスト可能）。 */
+  function applyDeclaredRelic(st, pi, d, r){
+    switch(r.effect){
+      case 'plusJudgeSelf': case 'minusJudgeOpp': { const jd=relicJudgeDelta(r.effect, pi); if(jd && st.judgeDelta && st.judgeDelta[d.slot] && !(jd.d<0 && heroHasKind(st,jd.p,'immuneToMinus'))) st.judgeDelta[d.slot][jd.p]+=jd.d; break; }   // 不朽：−1系は不朽のピンに効かない
+      case 'plusJudgeAllSelf': { if(st.judgeDelta) for(let i=0;i<st.judgeDelta.length;i++) st.judgeDelta[i][pi]+=1; break; }   // 黄金の酒宴：自分の全ピン+1
+      case 'swapCustomers': { const a=d.slot, b=d.slot2; if(st.field[a] && st.field[b] && !st.field[a].locked && !st.field[b].locked){ const t=st.field[a].customer; st.field[a].customer=st.field[b].customer; st.field[b].customer=t; } break; }   // 不動の楔(locked)で防がれる
+      case 'removeCustomer': { if(st.field[d.slot] && !st.field[d.slot].locked) st.field[d.slot].removed=true; break; }   // 忘却の髑髏：客を除外＝流れ（楔で防がれる・ヤルナR6と同型）
+      case 'lockCustomer': { if(st.field[d.slot]) st.field[d.slot].locked=true; break; }   // 不動の楔：移動も除外もされない（香炉/忘却のカウンター）
+      case 'maskMotifSelf': { const f=st.field[d.slot]; if(f && st.judgeDelta && st.judgeDelta[d.slot]){ let add=0; (f.customer.conditions||[]).forEach(function(c){ if(c.axis==='motif' && !satisfies(f.placed[pi],c)) add++; }); st.judgeDelta[d.slot][pi]+=add; } break; }   // 偽相の仮面：絵柄を任意＝その客の絵柄条件を全て満たす扱い（条件数補正に換算）
+    }
+  }
+  /* AI（ソロ用）：その窓で使える遺物を貪欲に1枚だけ評価。コイン換算で純利得が正なら伏せる（読み取り専用）。 */
+  function aiPairVp(pi,opp,vpOf){ let s=0; state.field.forEach(f=>{ if(f.removed) return; const r=judgeCustomer(f.placed[0],f.placed[1],f.customer,S); s+=vpOf(r,pi,f.customer.vp)-vpOf(r,opp,f.customer.vp); }); return s; }
+  function aiDeclare(pi, timing){
+    const opp=1-pi; let best=null, bestGain=0;
+    const vpOf=(res,who,vp)=> res.winner===who?vp : res.winner==='split'?Math.ceil(vp/2) : res.winner==='both'?vp : 0;
+    (state.players[pi].relicHand||[]).forEach(rid=>{
+      const r=relicDef(rid); if(!r || r.timing!==timing || state.players[pi].coins<heroCost(pi,r)) return;
+      if(r.effect==='plusJudgeSelf' || r.effect==='minusJudgeOpp'){
+        const jd=relicJudgeDelta(r.effect, pi); if(!jd) return;
+        for(let i=0;i<state.field.length;i++){ const f=state.field[i], vp=f.customer.vp;
+          const base=judgeCustomer(f.placed[0],f.placed[1],f.customer,S); const b=[0,0]; b[jd.p]=jd.d;
+          const after=judgeCustomer(f.placed[0],f.placed[1],f.customer,S,b[0],b[1]);
+          const gain=(vpOf(after,pi,vp)-vpOf(after,opp,vp))-(vpOf(base,pi,vp)-vpOf(base,opp,vp))-r.cost;
+          if(gain>bestGain){ bestGain=gain; best={relic:r.id, slot:i}; } }
+      } else if(r.effect==='swapCustomers'){
+        const base=aiPairVp(pi,opp,vpOf);
+        for(let a=0;a<state.field.length;a++) for(let b=a+1;b<state.field.length;b++){
+          const t=state.field[a].customer; state.field[a].customer=state.field[b].customer; state.field[b].customer=t;
+          const after=aiPairVp(pi,opp,vpOf);
+          const u=state.field[a].customer; state.field[a].customer=state.field[b].customer; state.field[b].customer=u;  // 元に戻す
+          const gain=(after-base)-r.cost;
+          if(gain>bestGain){ bestGain=gain; best={relic:r.id, slot:a, slot2:b}; }
+        }
+      } else if(r.effect==='removeCustomer'){
+        for(let i=0;i<state.field.length;i++){ if(state.field[i].removed) continue; const f=state.field[i], vp=f.customer.vp;
+          const base=judgeCustomer(f.placed[0],f.placed[1],f.customer,S);
+          const gain=(vpOf(base,opp,vp)-vpOf(base,pi,vp))-r.cost;   // 相手が取る客を流す＝相手の得を消す（自分が取る客なら損）
+          if(gain>bestGain){ bestGain=gain; best={relic:r.id, slot:i}; } }
+      } else if(r.effect==='plusJudgeAllSelf'){
+        let tot=0;
+        for(let i=0;i<state.field.length;i++){ if(state.field[i].removed) continue; const f=state.field[i], vp=f.customer.vp;
+          const base=judgeCustomer(f.placed[0],f.placed[1],f.customer,S); const b=[0,0]; b[pi]=1;
+          const after=judgeCustomer(f.placed[0],f.placed[1],f.customer,S,b[0],b[1]);
+          tot += (vpOf(after,pi,vp)-vpOf(after,opp,vp))-(vpOf(base,pi,vp)-vpOf(base,opp,vp)); }
+        const gain=tot-r.cost;
+        if(gain>bestGain){ bestGain=gain; best={relic:r.id}; }   // 全ピン+1（対象スロットなし）
+      } else if(r.effect==='maskMotifSelf'){
+        for(let i=0;i<state.field.length;i++){ if(state.field[i].removed) continue; const f=state.field[i], vp=f.customer.vp;
+          let add=0; (f.customer.conditions||[]).forEach(function(c){ if(c.axis==='motif' && !satisfies(f.placed[pi],c)) add++; }); if(add<=0) continue;
+          const base=judgeCustomer(f.placed[0],f.placed[1],f.customer,S); const b=[0,0]; b[pi]=add;
+          const after=judgeCustomer(f.placed[0],f.placed[1],f.customer,S,b[0],b[1]);
+          const gain=(vpOf(after,pi,vp)-vpOf(after,opp,vp))-(vpOf(base,pi,vp)-vpOf(base,opp,vp))-r.cost;
+          if(gain>bestGain){ bestGain=gain; best={relic:r.id, slot:i}; } }
+      }
+      // 不動の楔(lockCustomer)はAIの貪欲評価では利得を測れない（相手の宣言を見ないため）→AIは使わない
+    });
+    return bestGain>0 ? best : null;
+  }
   function doReveal(){
     state.lastGain=[0,0]; state.coinAnimDone=false; // このターンの増分（判定画面の演出用）
-    state.field.forEach(f=>{ const r=judgeCustomer(f.placed[0],f.placed[1],f.customer,S); f.result=r;
-      if(r.winner===0||r.winner===1){ const pl=state.players[r.winner]; pl.coins+=f.customer.vp; pl.acquired.push(f.customer); state.lastGain[r.winner]+=f.customer.vp; }
-      else if(r.winner==='both'){ const v=f.customer.vp; state.players[0].coins+=v; state.players[1].coins+=v; state.players[0].acquired.push(f.customer); state.players[1].acquired.push(f.customer); state.lastGain[0]+=v; state.lastGain[1]+=v; }
-      else if(r.winner==='split'){ const h=Math.ceil(f.customer.vp/2); state.players[0].coins+=h; state.players[1].coins+=h; state.players[0].acquired.push(f.customer); state.players[1].acquired.push(f.customer); state.lastGain[0]+=h; state.lastGain[1]+=h; } });
-    state.flowed += state.field.filter(f=>f.result.winner===null).length;
+    const won=[0,0];                                // このターンに各自が獲得した客の人数（運命の賽の精算用。折半/両取りも「獲得」に数える）
+    const HT=state.heroTurn||(state.heroTurn=[{},{}]);   // 主人公パッシブのターン上限カウンタ
+    const hg=(pi,n)=>{ state.players[pi].coins+=n; state.lastGain[pi]+=n; };   // 主人公のコイン加算（+N表示にも乗せる）
+    state.field.forEach((f,idx)=>{ if(f.removed){ f.result={winner:null,n0:0,n1:0}; return; }  // 忘却で除外＝流れ（誰も獲得しない）
+      const dz=(state.judgeDelta&&state.judgeDelta[idx])||[0,0];
+      const r=judgeCustomer(f.placed[0],f.placed[1],f.customer,S,dz[0]+heroFreedomBonus(0,idx,f),dz[1]+heroFreedomBonus(1,idx,f)); f.result=r; // 盃/呪印の補正＋自由（陳列②の絵柄ワイルド）
+      if(r.winner===0||r.winner===1){ const pl=state.players[r.winner]; pl.coins+=f.customer.vp; pl.acquired.push(f.customer); state.lastGain[r.winner]+=f.customer.vp; won[r.winner]++; heroAcquire(r.winner,f.customer,HT,hg); heroDominate(r.winner,r,HT,hg); heroSteal(r.winner,f.customer,HT,hg); }
+      else if(r.winner==='both'||r.winner==='split'){ const v=(r.winner==='both')?f.customer.vp:Math.ceil(f.customer.vp/2); [0,1].forEach(p=>{ state.players[p].coins+=v; state.players[p].acquired.push(f.customer); state.lastGain[p]+=v; won[p]++; heroAcquire(p,f.customer,HT,hg); }); [0,1].forEach(p=>heroSteal(p,f.customer,HT,hg)); } });
+    heroClaimFlows(won,hg);                          // 王権：流れた客（同点・忘却以外）の最初の1人を獲得（先行→後攻）
+    const flowN=state.field.filter(f=>!f.removed && f.result && f.result.winner===null && f.claimed==null).length;   // 物欲用の「流れ」（王権が取った分・忘却分は除く）
+    if(flowN>0){ heroFlow(0,flowN,HT,hg); heroFlow(1,flowN,HT,hg); }
+    state.betWon=won;                               // 運命の賽の精算（掛け金は調整中に支払い済み。成功で+3）。PD-09：折半既定での「2人以上」の数え方は要検討
+    state.players.forEach((pl,pi)=>{ if(state.bet&&state.bet[pi]){ const pay=betPayoff(won[pi]); if(pay>0){ pl.coins+=pay; state.lastGain[pi]+=pay; const yn=heroNormal(pi,'betRefundPlus'); if(yn){ const ref=(relicDef('rel_sai')?relicDef('rel_sai').cost:1)+(yn.n||1); pl.coins+=ref; state.lastGain[pi]+=ref; } } } });   // 遊興：賽成功で掛け金返却＋追加
+    state.flowed += state.field.filter(f=>f.result.winner===null && f.claimed==null).length;   // 王権が取った分は流れに数えない
     if(S.winLine>0 && (state.players[0].coins>=S.winLine || state.players[1].coins>=S.winLine)) state.forcedWin=true; // 強制勝利ライン：フェーズ終了時に到達チェック（チーム決定）
     state.phase='reveal'; render();
   }
+  /* ----- 主人公パッシブ（コイン加算系・Slice A）。HT=ターン上限カウンタ／players[pi].heroCnt=試合上限カウンタ ----- */
+  function heroNormal(pi,kind){ const h=state.players[pi].hero; return (h&&h.normal&&h.normal.kind===kind)?h.normal:null; }
+  function heroCost(pi,r){ const n=heroNormal(pi,'relicCostDown'); const c=(r&&r.cost)||0; return n ? Math.max(n.min||1, c-(n.n||1)) : c; }   // 無欲：遺物コスト−1（最低1）
+  function heroAcquire(pi,cust,HT,hg){ const n=heroNormal(pi,'gainOnAcquireRarity'); if(!n||cust.rarity!==n.rarity) return;   // 食欲：指定レア客の獲得で+1（ターン/試合上限）
+    const t=HT[pi], g=state.players[pi].heroCnt; t.acqR=t.acqR||0; g.acqR=g.acqR||0;
+    if(t.acqR<(n.perTurn||1) && g.acqR<(n.perGame||999)){ hg(pi,1); t.acqR++; g.acqR++; } }
+  function heroDominate(pi,r,HT,hg){ const n=heroNormal(pi,'gainOnDominate'); if(!n) return;   // 闘争：条件差margin以上で競り勝つと+1（ターン上限）
+    const m=(pi===0)?(r.n0-r.n1):(r.n1-r.n0); const t=HT[pi]; t.dom=t.dom||0;
+    if(m>=(n.margin||2) && t.dom<(n.perTurn||2)){ hg(pi,1); t.dom++; } }
+  function heroFlow(pi,flowN,HT,hg){ const n=heroNormal(pi,'gainOnFlow'); if(!n) return;   // 物欲：流れた客1人につき+1（ターン上限）
+    const t=HT[pi]; t.flow=t.flow||0; const add=Math.min(flowN, n.perTurn||1)-t.flow; if(add>0){ hg(pi,add); t.flow+=add; } }
+  /* ----- 主人公パッシブ（判定・盤面系・Slice B）----- */
+  function heroHasKind(st,pi,kind){ const p=st&&st.players&&st.players[pi], h=p&&p.hero; return !!(h&&h.normal&&h.normal.kind===kind); }   // 不朽：st基準の判定（applyDeclaredRelic用）
+  function heroFreedomBonus(p,idx,f){ const n=heroNormal(p,'wildMotifSlot'); if(!n||idx!==n.slot||!f.placed[p]) return 0;   // 自由：陳列②(slot)のピンは絵柄条件を満たす扱い＝未達の絵柄条件数を加算
+    let add=0; (f.customer.conditions||[]).forEach(function(c){ if(c.axis==='motif' && !satisfies(f.placed[p],c)) add++; }); return add; }
+  function heroSteal(q,cust,HT,hg){ const opp=1-q, n=heroNormal(opp,'stealOnOppHighVp'); if(!n) return;   // 性欲：相手(q)がUC/R獲得→1コインをoppへ（ターン/試合上限・相手0なら不可）
+    if((cust.vp||0)<(n.minVp||2)) return; const t=HT[opp], g=state.players[opp].heroCnt; t.steal=t.steal||0; g.steal=g.steal||0;
+    if(t.steal>=(n.perTurn||1) || g.steal>=(n.perGame||3) || state.players[q].coins<=0) return;
+    state.players[q].coins-=1; state.lastGain[q]-=1; hg(opp,1); t.steal++; g.steal++; }
+  function heroClaimFlows(won,hg){ const order=[state.firstThisTurn,1-state.firstThisTurn];   // 王権：流れ（同点・忘却以外）の最初(最小スロット)の1人を獲得・先行優先
+    order.forEach(function(pi){ if(!heroNormal(pi,'claimFirstFlow')) return;
+      for(let i=0;i<state.field.length;i++){ const f=state.field[i];
+        if(!f.removed && f.result && f.result.winner===null && f.claimed==null){ f.claimed=pi; state.players[pi].acquired.push(f.customer); hg(pi,f.customer.vp); won[pi]++; break; } } }); }
   function nextTurn(){ for(let p=0;p<2;p++){ const used=new Set(state.field.map(f=>f.placed[p]).filter(Boolean).map(x=>x.iid)); state.players[p].supply=state.players[p].supply.filter(pin=>!used.has(pin.iid)); }
     if(state.forcedWin){ state.phase='gameover'; recordResult(); render(); return; } // 20到達＝そのフェーズ終了で即決着（未達なら従来どおり最終コイン最多）
-    nextTurnStart(); }
+    if(state.turn>=S.turns){ nextTurnStart(); return; }   // 最終ターン→集計へ（次ターンが無いので片付けは省略）
+    beginCleanup(); }                                     // 片付け時（導きの羅針：次の自分の客を先読み）→ 次ターン開始
+  /* ----- 片付け時：導きの羅針（次のターンに自分が出す客2枚を先読み・秘匿・コイン1）----- */
+  function cleanCanPeek(pi){ const P=state.players[pi]; return (P.relicHand||[]).some(rid=>{ const r=relicDef(rid); return r && r.timing==='cleanup' && P.coins>=heroCost(pi,r); }); }
+  function beginCleanup(){ state.cleanOrder=[state.firstThisTurn, 1-state.firstThisTurn]; state.cleanStep=0; state.peekShow=null; cleanAdvance(); }
+  function cleanAdvance(){
+    while(state.cleanStep<2){
+      const pi=state.cleanOrder[state.cleanStep];
+      if(!cleanCanPeek(pi)){ state.cleanStep++; continue; }                 // 使える羅針が無い／コイン不足→とばす
+      if(state.mode==='ai' && pi===1){ state.cleanStep++; continue; }       // AIは使わない（情報の価値を貪欲評価しないため）
+      state.peekShow=null;
+      state.phase=(state.mode==='ai')?'cleanup':'cleanupHandoff'; render(); return; // 人間2人は受け渡し画面を挟む（秘匿）
+    }
+    state.cleanStep=0; nextTurnStart();                                     // 全員終わり→次ターン開始
+  }
   function resetGame(){ if(confirm('最初からやり直しますか？ 現在の試合は破棄されます。')){ state=null; legendOpen=false; render(); } }
 
   /* ---------- 部品 ---------- */
@@ -581,31 +851,52 @@
     return '<div class="topbar"><div class="sub">EVER MARKET — PROTOTYPE</div>'+howtoBtn()+legendBtn()+resultsBtn()+settingsBtn()+'</div>'
       +'<div class="center" style="padding:30px 0">'
       +'<div class="title-em" style="margin:6px 0">永遠闇市</div>'
-      +'<div class="sub" style="margin-bottom:24px">月の消える夜、決闘競売 — Phase&nbsp;1（コア）</div>'
+      +'<div class="sub" style="margin-bottom:24px">月の消える夜、決闘競売 — Phase&nbsp;3（主人公・実装中）</div>'
       +'<button class="btn primary big" onclick="EM.startMatch(\'hotseat\')">2人で対戦</button> <button class="btn big" onclick="EM.startMatch(\'ai\')">1人でAI対戦</button>'
       +'<div class="note" style="margin-top:24px; max-width:600px; display:inline-block; text-align:left">'
       +'・盤面は<b>対面の卓</b>（上＝相手の席／中央＝布の上の客カード／下＝自分の席）。<br>'
       +'・<b>仕込み</b>：客が見えない状態で商品（ピンズ）を4つ選び①〜④に並べる（伏せ・交代）。<br>'
-      +'・<b>公開→調整</b>：客4枚が出て位置で対応。先行→後攻の順に自分のピン2つを入れ替え（各自2回・先行は毎ターン交代）。<br>'
+      +'・<b>公開→調整</b>：客4枚が出て位置で対応。先行→後攻の順に自分のピン2つを入れ替え（各自2回・先行はコイン劣勢側／同点ならターンごとに交代）。<br>'
       +'・条件/特性は<b>アイコン表示</b>。マウスを乗せると詳細、<b>📖凡例</b>で一覧。<br>'
-      +'・<b>判定</b>：条件を多く満たした側が客を獲得＝<span class="coin">コイン</span>。同点は折半（⚙で変更可）。全'+S.turns+'ターン後コイン最多が勝者'+(S.winLine>0?'（先に'+S.winLine+'コイン到達で即勝利）':'')+'。'
+      +'・<b>判定</b>：条件を多く満たした側が客を獲得＝<span class="coin">コイン</span>。同点は流れ＝どちらも取れず（⚙で変更可）。全'+S.turns+'ターン後コイン最多が勝者'+(S.winLine>0?'（先に'+S.winLine+'コイン到達で即勝利）':'')+'。'
       +'</div>'
       +'<div class="note" style="margin-top:16px"><a href="?test">▶ セルフテストを実行</a></div></div>';
   }
+  /* 今ターンのどのフェーズか（仕込み0→公開直後1→調整2→判定直前3→判定4）。-1=ターン外（表示しない） */
+  function phaseStep(){
+    const p=state.phase;
+    if(p==='stock'||p==='stockHandoff') return 0;
+    if((p==='declare'||p==='declareHandoff') && state.declTiming==='postReveal') return 1;
+    if(p==='adjust') return 2;
+    if((p==='declare'||p==='declareHandoff') && state.declTiming==='declare') return 3;
+    if(p==='reveal') return 4;
+    return -1;
+  }
+  function phaseStepper(){
+    const labels=['仕込み','公開直後','調整','判定直前','判定'], nums='①②③④⑤', cur=phaseStep();
+    if(cur<0) return '';
+    let chips='';
+    for(let i=0;i<labels.length;i++){
+      const cls = i<cur?'pstep done':(i===cur?'pstep cur':'pstep todo');
+      const mark = i<cur ? '<span class="pchk">✓</span>' : nums[i];
+      chips += (i>0?'<span class="psep">▸</span>':'') + '<span class="'+cls+'">'+mark+' '+labels[i]+'</span>';
+    }
+    return '<div class="pbar" data-tip="このターンの進み具合（今いるフェーズが光ります）">'+chips+'</div>';
+  }
   function topbar(label){ const winTxt = S.winLine>0 ? '🏆 コイン最多／'+S.winLine+'で即勝利' : '🏆 勝利条件：最終コイン最多';
-    return '<div class="topbar"><div class="sub">ターン '+state.turn+' / '+S.turns+' ・ '+label+' <span class="pill" data-tip="全ターン終了時にコインが多い方が勝ち。'+(S.winLine>0?'先に'+S.winLine+'コインへ到達すると、そのフェーズ終了時に即勝利。':'')+'">'+winTxt+'</span></div>'+howtoBtn()+legendBtn()+resultsBtn()+settingsBtn()+'</div>'; }
+    return '<div class="topbar"><div class="sub">ターン '+state.turn+' / '+S.turns+' ・ '+label+' <span class="pill" data-tip="全ターン終了時にコインが多い方が勝ち。'+(S.winLine>0?'先に'+S.winLine+'コインへ到達すると、そのフェーズ終了時に即勝利。':'')+'">'+winTxt+'</span></div>'+howtoBtn()+legendBtn()+resultsBtn()+settingsBtn()+'</div>'+phaseStepper(); }
   /* コインの山（数字の代わりに「物」として置く） */
   function coinPileSVG(){ return '<svg class="cpile" width="24" height="16" viewBox="0 0 24 16" aria-hidden="true"><circle cx="8" cy="10" r="5.5" fill="#c9a14a" stroke="#8a6a28"/><circle cx="16" cy="9" r="5.5" fill="#d6b258" stroke="#8a6a28"/><circle cx="11" cy="5.5" r="5.5" fill="#c9a14a" stroke="#8a6a28"/></svg>'; }
   /* 残り入替＝卓上のチップ（使うと裏返る見立て） */
-  function chipsHTML(pi){ let s='<span class="chiprow" data-tip="位置入替の残り回数（使うとチップが裏返る）">'; for(let k=0;k<ADJ_MAX;k++) s+='<span class="chip'+(k<state.changesLeft[pi]?'':' off')+'"></span>'; return s+'<span class="note" style="margin-left:4px">入替 残'+state.changesLeft[pi]+'</span></span>'; }
+  function chipsHTML(pi){ const tot=Math.max(ADJ_MAX, state.changesLeft[pi]); let s='<span class="chiprow" data-tip="位置入替の残り回数（砂の還流で増える／沈黙の錘で減る）">'; for(let k=0;k<tot;k++) s+='<span class="chip'+(k<state.changesLeft[pi]?'':' off')+'"></span>'; return s+'<span class="note" style="margin-left:4px">入替 残'+state.changesLeft[pi]+'</span></span>'; }
   /* プレイヤーマット（革マット＋主人公/遺物の置き場を印刷） */
   function zoneBar(pi,active,extra,coinHtml,side){
     side = side || (pi===0?'me':'opp');
     const coins = coinHtml || ('<span class="coin">'+coinPileSVG()+'× '+state.players[pi].coins+'</span>');
     return '<div class="mat '+side+(active?' active':'')+'">'
-      +'<div class="mzone" data-tip="主人公カードの置き場（Phase 3 で使用予定）">主人公</div>'
+      +'<div class="mzone" data-tip="'+(state.players[pi].hero?esc(state.players[pi].hero.desire+'／'+state.players[pi].hero.name+'：'+state.players[pi].hero.normal.text):'主人公カードの置き場（試合開始時に選択）')+'">'+(state.players[pi].hero?('主人公 ◇'+esc(state.players[pi].hero.desire)):'主人公')+'</div>'
       +'<div class="mmid"><div class="pname">'+(active?'<span class="turn">▶ </span>':'')+esc(pname(pi))+(active?' の番':'')+'</div><div class="scorebar">'+coins+(extra||'')+'</div></div>'
-      +'<div class="mzone" data-tip="遺物カードの置き場（Phase 2 で使用予定）">遺物</div></div>';
+      +'<div class="mzone" data-tip="遺物の手札（毎ターン1枚引く・コインで使う）">遺物 ×'+((state.players[pi].relicHand||[]).length)+'</div></div>';
   }
   /* 判定画面用：コイン数のカウントアップ＋「+N」表示 */
   function coinFxHtml(pi){
@@ -625,6 +916,21 @@
     });
   }
 
+  const HERO_WIRED=new Set(['startCoins','gainOnAcquireRarity','gainOnFlow','gainOnDominate','immuneToMinus','wildMotifSlot','claimFirstFlow','stealOnOppHighVp','relicCostDown','peekOwnThisTurn','chooseSecond','betRefundPlus']);  // 全12パッシブ実装済み（A:コイン系／B:判定盤面系／C:進行情報コスト系）
+  function heroSelectScreen(){
+    const pi=state.heroPick, others=[];
+    state.players.forEach((p,i)=>{ if(i!==pi && p.hero) others.push(esc(pname(i))+'：◇'+esc(p.hero.desire)+'／'+esc(p.hero.name)); });
+    const cards=(D.HERO_POOL||[]).map(h=>{ const on=HERO_WIRED.has(h.normal.kind);
+      return '<div class="hcard'+(on?'':' soon')+'" onclick="EM.pickHero(\''+h.id+'\')" data-tip="'+esc(h.normal.text)+'">'
+        +'<div class="hd">'+esc(h.desire)+'</div><div class="hn">◇ '+esc(h.name)+'</div>'
+        +'<div class="hb">'+esc(h.normal.text)+'</div>'
+        +'<div class="hf">'+(on?'パッシブ実装済み':'パッシブは近日（選択は可）')+'</div></div>'; }).join('');
+    return topbar('主人公の選択')
+      +'<div class="center" style="padding:16px 0 6px"><div class="big">'+esc(pname(pi))+'：主人公を選ぶ</div>'
+      +'<div class="note" style="margin:6px auto 0;max-width:680px">試合開始時に1人を選びます（公開）。パッシブは常時自動で働きます。'
+      +(state.mode==='ai'?'AIはランダムに選びます。':'')+(others.length?'<br>'+others.join('　'):'')+'</div></div>'
+      +'<div class="hgrid">'+cards+'</div>';
+  }
   function stockHandoffScreen(){
     const nm=pname(state.stockStep);
     return topbar('仕込み')
@@ -633,6 +939,10 @@
       +'<div class="note" style="margin-bottom:22px">相手は画面を見ないでください。<br>商品（ピンズ）を4つ選んで①〜④に並べます。※まだ客は見えません（公開後に並べ替えで調整できます）。</div>'
       +'<button class="btn primary big" onclick="EM.beginStock()">仕込みをはじめる ▶</button></div>';
   }
+  function heroPeekPanel(p){ const n=heroNormal(p,'peekOwnThisTurn'); if(!n) return '';   // 知識：仕込み前にこのターン自分が出す客を先読み（情報のみ）
+    const cs=(state.players[p].customerDeck||[]).slice(0, n.n||CFG.customersPresentedPerPlayer); if(!cs.length) return '';
+    const cards=cs.map(function(c,k){ return '<div class="pcard '+c.rarity+'" style="display:inline-block;vertical-align:top;margin:4px;min-width:180px"><div class="no">このターンの客'+(k+1)+'</div>'+custMid(c)+'<div class="creq">'+c.conditions.map(function(cd){return '<span class="cchip" data-tip="'+esc(condText(cd))+'">'+condGlyph(cd)+'</span>';}).join('')+'</div></div>'; }).join('');
+    return '<div class="panel" style="margin-top:10px"><div class="rh-label">◇知識（先読の瞳）：このターン、あなたが場に出す客（先読み）</div><div>'+cards+'</div></div>'; }
   function stockScreen(){
     const p=stockP(); const avail=stockAvail(p);
     const head=topbar('仕込み — '+esc(pname(p))+' の陳列');
@@ -659,9 +969,137 @@
       +'<button class="btn ghost" onclick="EM.stockReset()">並べ直す</button>'
       +'<button class="btn ghost" onclick="EM.resetGame()">リセット</button>'
       +'<button class="btn primary" onclick="EM.stockConfirm()" '+(stockReady()?'':'disabled')+'>'+((state.stockStep===0 && state.mode!=='ai')?'確定して相手に渡す ▶':'確定して公開 ▶')+'</button></div></div>';
-    return head+'<div class="table"><div class="board">'+opp+market+me+'</div></div>'+casePanel+bar;
+    return head+'<div class="table"><div class="board">'+opp+market+me+'</div></div>'+heroPeekPanel(stockP())+casePanel+relicHandStrip(stockP(),null)+bar;
   }
 
+  function relicDef(id){ return (D.RELIC_POOL||[]).find(r=>r.id===id); }
+  // 統一の手札（全プレイ画面の下部に常時表示）。activeTiming＝今使えるタイミング（'adjust'/'postReveal'/'declare'/null）。該当カードが発光。
+  function relicHandStrip(pi, activeTiming){
+    const hand=state.players[pi].relicHand||[], coins=state.players[pi].coins;
+    const whenLabel=(t)=> t==='postReveal'?'公開直後':(t==='declare'?'判定直前':(t==='adjust'?'調整中':(t==='cleanup'?'片付け時':'')));
+    const lab = activeTiming
+      ? '◈ 遺物（手札）— '+esc(pname(pi))+'：今は <span class="coin">'+whenLabel(activeTiming)+'</span> の遺物が光ります'
+      : '◈ 遺物（手札）— '+esc(pname(pi))+'（今は遺物を使えるタイミングではありません）';
+    if(!hand.length) return '<div class="rhand"><div class="rh-label">'+lab+'</div><span class="note">手札なし（毎ターン1枚引く）</span></div>';
+    const sel = state.declSel||{};
+    const cards=hand.map(rid=>{ const r=relicDef(rid); if(!r) return '';
+      const usableNow=(r.timing===activeTiming), ec=heroCost(pi,r), afford=coins>=ec, when=whenLabel(r.timing);
+      let action;
+      if(usableNow && activeTiming==='adjust'){
+        action = afford
+          ? '<button class="btn sm primary" onclick="EM.useRelic(\''+r.id+'\')" data-tip="'+esc(r.text)+'">使う（'+ec+' コイン）</button>'
+          : '<button class="btn sm ghost" disabled data-tip="コインが足りません（必要 '+ec+' ／ 所持 '+coins+'）">使う（'+ec+' コイン）</button>';
+      } else if(usableNow){                                   // 公開直後 / 判定直前：宣言で選ぶ
+        const isSel=sel.relic===r.id;
+        action = afford
+          ? '<button class="btn sm '+(isSel?'primary':'')+'" onclick="EM.declareSelectRelic(\''+r.id+'\')" data-tip="'+esc(r.text)+'">'+(isSel?'✓ 選択中':'選ぶ ▶')+'</button>'
+          : '<button class="btn sm ghost" disabled data-tip="コインが足りません（必要 '+ec+' ／ 所持 '+coins+'）">コイン不足</button>';
+      } else {
+        action = '<span class="note" style="display:inline-block;margin-top:6px">'+when+'に使用（今は待機）</span>';
+      }
+      const isSelHi = usableNow && activeTiming!=='adjust' && sel.relic===r.id;
+      const cls='rcard'+(usableNow?(afford?' usable':' disabled'):' dim')+(isSelHi?' selA':'');
+      return '<div class="'+cls+'" data-tip="'+esc(r.system+'｜'+r.text)+'">'
+        +'<span class="rcost" data-tip="使用コスト（無欲は−1。払うと最終得点が減る）">'+ec+'</span>'
+        +'<div class="rnm">◈ '+esc(r.name)+(usableNow?'<span class="rnow">▶ 今使える</span>':'')+'</div>'
+        +'<div class="rsys">'+esc(r.system)+' ・'+when+(r.consumesTurn?'(手番消費)':'')+'</div>'
+        +'<div class="rtx">'+esc(r.text)+'</div>'+action+'</div>'; }).join('');
+    return '<div class="rhand"><div class="rh-label">'+lab+'</div><div class="rrow">'+cards+'</div></div>';
+  }
+  function postRevealNote(){ const ds=(state.declLog||[]).filter(d=>d.timing==='postReveal'); if(!ds.length) return '';
+    return '<div class="note" style="margin:6px 0;color:#c9a14a">'+ds.map(d=> d.effect==='swapCustomers'
+      ? ('◈'+esc(d.name)+'：客'+(d.slot+1)+'↔客'+(d.slot2+1)+'を入替（'+esc(pname(d.pi))+'）')
+      : d.effect==='removeCustomer'
+      ? ('◈'+esc(d.name)+'：客'+(d.slot+1)+'を除外＝流れ（'+esc(pname(d.pi))+'）')
+      : d.effect==='lockCustomer'
+      ? ('◈'+esc(d.name)+'：客'+(d.slot+1)+'を保護（'+esc(pname(d.pi))+'）')
+      : ('◈'+esc(d.name)+'（'+esc(pname(d.pi))+'）')).join('　')+'</div>'; }
+  function judgeWideNote(){ const ds=(state.declLog||[]).filter(d=>d.effect==='plusJudgeAllSelf'); if(!ds.length) return '';   // 黄金の酒宴（全ピン+1）の表示
+    return '<div class="note" style="margin:6px 0;color:#c9a14a">'+ds.map(d=>'◈'+esc(d.name)+'：'+esc(pname(d.pi))+' の全ピン +1').join('　')+'</div>'; }
+  function betActiveNote(){ if(!state.bet) return ''; const who=state.players.map((p,pi)=>state.bet[pi]?pname(pi):null).filter(Boolean);   // 調整中：賭け宣言中の表示
+    if(!who.length) return ''; return '<div class="note" style="margin:6px 0;color:#c9a14a">◈運命の賽：'+esc(who.join('・'))+' が賭け宣言中（このターン2人以上獲得で+3コイン）</div>'; }
+  function betNote(){ if(!state.bet) return ''; let s='';   // 判定：賭けの結果表示
+    state.players.forEach((pl,pi)=>{ if(state.bet[pi]){ const w=(state.betWon||[0,0])[pi], ok=w>=2;
+      s+='<div class="note" style="margin:6px 0;color:#c9a14a">◈運命の賽（'+esc(pname(pi))+'）：'+w+'人獲得 → '+(ok?'成功 <b class="coin">+3コイン</b>':'失敗（掛け金1は戻らず）')+'</div>'; } });
+    return s; }
+  function declareHandoffScreen(){
+    const pi=state.declOrder[state.declStep], nm=pname(pi);
+    const tlabel = state.declTiming==='postReveal' ? '公開直後' : '判定直前';
+    return topbar(tlabel+' — 宣言の受け渡し')
+      +'<div class="center" style="padding:46px 0">'
+      +'<div class="big" style="margin:10px 0">'+esc(nm)+' の宣言</div>'
+      +'<div class="note" style="margin-bottom:22px">相手は画面を見ないでください。<br>'+tlabel+'に使う遺物を<b>1つだけ</b>伏せて宣言します（使わなくてもOK）。</div>'
+      +'<button class="btn primary big" onclick="EM.beginDeclareTurn()">宣言をはじめる ▶</button></div>';
+  }
+  function declareScreen(){
+    const pi=state.declOrder[state.declStep], P=state.players[pi], coins=P.coins;
+    const tlabel = state.declTiming==='postReveal' ? '公開直後' : '判定直前';
+    const sel=state.declSel||{relic:null,slot:null,slot2:null};
+    const selR=sel.relic?relicDef(sel.relic):null;
+    const tgt = selR ? selR.target : null;
+    const need=(tgt==='cust2')?2:(tgt==='allSelf')?0:1;   // 必要な対象数（前方で定義＝対象待ちハイライトに使う）
+    const pinRowTarget = (tgt==='selfSlot')?pi : (tgt==='oppSlot')?(1-pi) : null;   // ピンを選ぶ系（盃/呪印）
+    const custTarget = (tgt==='cust2' || tgt==='custSlot');                         // 客を選ぶ系（香/忘却）
+    const chosen = sel.slot==null ? [] : (sel.slot2==null ? [sel.slot] : [sel.slot, sel.slot2]);
+    const head=topbar(tlabel+' — '+esc(pname(pi))+' の伏せ宣言');
+    let rowO='', rowC='', rowM='';
+    const slotPin=(rp,i)=>{ const f=state.field[i], c=f.customer, pin=f.placed[rp];
+      const can=(pinRowTarget===rp), isCh=(can && sel.slot===i);
+      const allSelfHit=(selR&&selR.effect==='plusJudgeAllSelf'&&rp===pi);   // 黄金の酒宴：自分の全ピンに+1プレビュー
+      let delta='';
+      if(allSelfHit) delta='+1';
+      else if(selR&&isCh){
+        if(selR.effect==='plusJudgeSelf') delta='+1';
+        else if(selR.effect==='minusJudgeOpp') delta='−1';
+        else if(selR.effect==='maskMotifSelf'){ let add=0; c.conditions.forEach(function(cd){ if(cd.axis==='motif'&&!satisfies(pin,cd)) add++; }); delta=add>0?('絵柄+'+add):'絵柄±0'; }   // 偽相の仮面：満たせる絵柄条件の数
+      }
+      const nn=countSatisfied(pin,c);
+      const cls='ppin '+(rp===0?'me':'opp')+(can?(isCh?' selA':((selR&&chosen.length<need)?' await':' click')):'');   // 対象待ち＝点滅で誘導
+      const oc=can?(' onclick="EM.declareSelectSlot('+i+')"'):'';
+      return '<div class="'+cls+'"'+oc+' data-tip="'+esc(pin?('商品：'+pin.name):'空き')+'"><div class="side">'+esc(pname(rp))+(rp===pi?'（あなた）':'')+'</div>'
+        +'<span class="cnt">'+nn+' / '+c.conditions.length+(delta?' <b class="coin">'+delta+'</b>':'')+'</span>'
+        +'<span class="ttl">'+(pin?'◇ '+esc(pin.name):'—')+'</span>'+(pin?'<div class="tokwrap">'+pinTokenHTML(pin,46)+'</div>':'')+'</div>';
+    };
+    state.field.forEach((f,i)=>{ const c=f.customer;
+      const cCh = custTarget && chosen.indexOf(i)>=0;
+      const custMk = (tgt==='cust2') ? (chosen.length===2?('↔ 客'+(chosen[0]+1)+'↔客'+(chosen[1]+1)):'↔ もう1人を選ぶ') : (selR&&selR.effect==='lockCustomer'?'🛡 保護':'✕ 消滅');
+      const cMark = cCh ? ('<div class="center coin" style="font-size:11px;margin-top:2px">'+custMk+'</div>') : '';
+      const cClick = custTarget ? (cCh?' selA':((selR&&chosen.length<need)?' await':' click')) : '';   // 対象待ち＝点滅で誘導
+      const cOc = custTarget ? (' onclick="EM.declareSelectSlot('+i+')"') : '';
+      rowO+='<div class="lane" style="grid-column:'+(i+1)+';grid-row:1">'+slotPin(1,i)+'</div>';
+      rowC+='<div class="pcard r'+(i%4)+' '+c.rarity+cClick+'" style="grid-column:'+(i+1)+';grid-row:2"'+cOc+'><div class="no">客'+(i+1)+'</div>'+custMid(c)+cMark+'</div>';
+      rowM+='<div class="lane" style="grid-column:'+(i+1)+';grid-row:3">'+slotPin(0,i)+'</div>';
+    });
+    const market='<div class="tgrid"><div class="clothband" style="grid-row:2"></div>'+rowO+rowC+rowM+'</div>';
+    const opp=zoneBar(1,false,'<span class="note">'+(pi===1?'あなた':'相手')+'</span>');
+    const me=zoneBar(0,false,'<span class="note">'+(pi===0?'あなた':'相手')+'</span>');
+    const board='<div class="table"><div class="board">'+opp+market+me+'</div></div>';
+    // 使える遺物が無い／コイン不足／1ターン1枚で使用済み → 「次へ」だけの窓（PD-02：常に表示モードで出る）
+    if(!canDeclare(pi, state.declTiming)){
+      const hasTimingRelic=(P.relicHand||[]).some(rid=>{ const r=relicDef(rid); return r&&r.timing===state.declTiming; });
+      let reason;
+      if(S.relicLimit==='perTurn' && state.declaredThisTurn && state.declaredThisTurn[pi]) reason='「1ターン1枚」設定で、すでに今ターンに遺物を使いました。';
+      else if(!hasTimingRelic) reason='この'+tlabel+'で使える遺物が手札にありません。';
+      else reason='コインが足りず、'+tlabel+'の遺物を使えません。';
+      return head+board+relicHandStrip(pi, state.declTiming)
+        +'<div class="topbar" style="margin-top:10px"><div class="note"><b>'+esc(pname(pi))+'</b>：'+esc(reason)+'</div><div><button class="btn primary" onclick="EM.declarePass()">次へ ▶</button></div></div>';
+    }
+    const hand=relicHandStrip(pi, state.declTiming);   // 全手札を表示し、この窓のタイミングの遺物を発光・「選ぶ」
+    let step;
+    if(!selR) step='① 遺物を1つ選ぶ（使わないなら「使わない」）。';
+    else if(tgt==='allSelf')  step='② 自分の全ピンが +1（対象選択は不要）→「これで伏せる」。';
+    else if(tgt==='cust2')    step=(sel.slot==null?'② 入れ替える客を1人タップ。':(sel.slot2==null?'③ もう1人の客をタップ。':'④「これで伏せる」。'));
+    else if(tgt==='custSlot') step=(sel.slot==null?('② '+(selR.effect==='lockCustomer'?'守る':'取り除く')+'客をタップ。'):'③「これで伏せる」。');
+    else step=(sel.slot==null?('② 対象の '+(tgt==='selfSlot'?'自分（下段）':'相手（上段）')+' のピンをタップ。'):'③「これで伏せる」。');
+    const guide='<div class="note" style="margin:6px 0"><b>'+esc(pname(pi))+'</b>：'+tlabel+'に使う遺物を<b>1つだけ</b>伏せて宣言（相手には見えません・解決は先行側から）。'+esc(step)+'</div>';
+    const canConfirm = selR && chosen.length===need && coins>=heroCost(pi,selR);
+    const remain=need-chosen.length;
+    const bar='<div class="topbar" style="margin-top:10px"><div class="note">伏せたら相手の番（または次へ）へ進みます</div><div style="display:flex;gap:8px">'
+      +(selR?'<button class="btn ghost" onclick="EM.declareCancel()">選択解除</button>':'')
+      +'<button class="btn" onclick="EM.declarePass()" data-tip="この窓では遺物を使わない">使わない（パス）</button>'
+      +'<button class="btn primary" onclick="EM.declareConfirm()" '+(canConfirm?'':'disabled')+'>'+(canConfirm?'▶ これで伏せる':(!selR?'① 遺物を選ぶ':(need===0?'▶ これで伏せる':'② 対象をタップ（あと'+remain+'）')))+'</button></div></div>';
+    return head+board+hand+guide+bar;
+  }
   function adjustScreen(){
     const act=state.adjustActive;
     const head=topbar('配置調整（公開）');
@@ -670,13 +1108,14 @@
     let bestPrev=-1; if(selPin){ state.field.forEach(f=>{ const v=countSatisfied(selPin,f.customer); if(v>bestPrev) bestPrev=v; }); }
     let rowO='', rowC='', rowM='';
     state.field.forEach((f,i)=>{
-      const c=f.customer; const total=c.conditions.length; const pre=judgeCustomer(f.placed[0],f.placed[1],c,S); const lead=[pre.winner===0,pre.winner===1];
+      const c=f.customer; const total=c.conditions.length; const pre=judgeCustomer(f.placed[0],f.placed[1],c,S); const lead=f.removed?[false,false]:[pre.winner===0,pre.winner===1];
       const reqs='<div class="creq">'+c.conditions.map(cd=>condChip(cd,[f.placed[0],f.placed[1]],act)).join('')+'</div>';
-      const stat = (pre.winner===0||pre.winner===1)?('<div class="center" style="font-size:12px"><span class="coin">'+esc(pname(pre.winner))+' 優勢</span></div>'):'<div class="center note">互角＝流れ</div>';
+      const stat = f.removed ? '<div class="center coin" style="font-size:12px">✕ 忘却で消滅（流れ）</div>'
+        : (pre.winner===0||pre.winner===1)?('<div class="center" style="font-size:12px"><span class="coin">'+esc(pname(pre.winner))+' 優勢</span></div>'):'<div class="center note">互角＝流れ</div>';
       let prev='';
-      if(selPin){ const v=countSatisfied(selPin,c); const isSel=(i===selSlot); prev='<div class="prev'+(isSel?' cur':((v===bestPrev&&v>0)?' best':''))+'">'+(isSel?'⇄ 選択中（'+v+'/'+total+'）':'ここへ移すと '+v+'/'+total)+'</div>'; }
+      if(selPin && !f.removed){ const v=countSatisfied(selPin,c); const isSel=(i===selSlot); prev='<div class="prev'+(isSel?' cur':((v===bestPrev&&v>0)?' best':''))+'">'+(isSel?'⇄ 選択中（'+v+'/'+total+'）':'ここへ移すと '+v+'/'+total)+'</div>'; }
       rowO+='<div class="lane" style="grid-column:'+(i+1)+';grid-row:1">'+ppinBox(f.placed[1],1,i,lead[1],pre.n1)+'</div>';
-      rowC+='<div class="pcard r'+(i%4)+' '+c.rarity+'" style="grid-column:'+(i+1)+';grid-row:2"><div class="no">客'+(i+1)+'</div>'+custMid(c)+reqs+stat+prev+'</div>';
+      rowC+='<div class="pcard r'+(i%4)+' '+c.rarity+'" style="grid-column:'+(i+1)+';grid-row:2'+(f.removed?';opacity:.55':'')+'"><div class="no">客'+(i+1)+'</div>'+custMid(c)+reqs+stat+prev+'</div>';
       rowM+='<div class="lane" style="grid-column:'+(i+1)+';grid-row:3">'+ppinBox(f.placed[0],0,i,lead[0],pre.n0)+'</div>';
     });
     const market='<div class="tgrid"><div class="clothband" style="grid-row:2"></div>'+rowO+rowC+rowM+'</div>';
@@ -688,7 +1127,7 @@
       +(state.adjSel!=null?'<button class="btn ghost" onclick="EM.cancelSel()">選択解除</button>':'')
       +'<button class="btn ghost" onclick="EM.resetGame()">リセット</button>'
       +'<button class="btn primary" onclick="EM.adjPass()">パス（相手の番へ） ▶</button></div></div>';
-    return head+'<div class="table"><div class="board">'+opp+market+me+'</div></div>'+guide+bar;
+    return head+'<div class="table"><div class="board">'+opp+market+me+'</div></div>'+postRevealNote()+betActiveNote()+relicHandStrip(act,'adjust')+guide+bar;
   }
 
   function revealScreen(){
@@ -697,25 +1136,51 @@
     const head=topbar('判定確定');
     const opp=zoneBar(1,false,'<span class="note">獲得 '+state.players[1].acquired.length+'</span>',coinFxHtml(1));
     let rowO='', rowC='', rowM='';
+    const declNote=(i)=>{ const ds=(state.declLog||[]).filter(d=>d.slot===i && (d.effect==='plusJudgeSelf'||d.effect==='minusJudgeOpp'||d.effect==='maskMotifSelf')); if(!ds.length) return '';
+      return '<div class="center" style="font-size:11px;margin-top:3px">'+ds.map(d=>'<span class="coin">◈'+esc(d.name)+'</span> <span class="note">'+esc(pname(d.pi))+(d.effect==='plusJudgeSelf'?' +1':d.effect==='minusJudgeOpp'?' −1':'（絵柄）')+'</span>').join('　')+'</div>'; };
     state.field.forEach((f,i)=>{
       const c=f.customer,r=f.result; const reqs='<div class="creq">'+c.conditions.map(cd=>condChip(cd,[f.placed[0],f.placed[1]],null)).join('')+'</div>';
       const pop=anim?' pop':'';
       let verdict,cls='';
-      if(r.winner===0||r.winner===1){ verdict='<span class="coin'+pop+'">'+esc(pname(r.winner))+' が獲得 (+'+c.vp+')</span>'; cls=' winglow'+(anim?' anim':''); }
+      if(f.removed) verdict='<span class="note">✕ 忘却で消滅（流れ）</span>';
+      else if(f.claimed!=null){ verdict='<span class="coin'+pop+'">◇王権『'+esc(pname(f.claimed))+'』が獲得 (+'+c.vp+')</span>'; cls=' winglow'+(anim?' anim':''); }
+      else if(r.winner===0||r.winner===1){ verdict='<span class="coin'+pop+'">'+esc(pname(r.winner))+' が獲得 (+'+c.vp+')</span>'; cls=' winglow'+(anim?' anim':''); }
       else if(r.winner==='both') verdict='<span class="coin'+pop+'">両者が獲得 (+'+c.vp+')</span>';
       else if(r.winner==='split') verdict='<span class="coin'+pop+'">折半 (+'+Math.ceil(c.vp/2)+')</span>';
       else verdict='<span class="note">流れ（同点・誰も取れず）</span>';
       rowO+='<div class="lane" style="grid-column:'+(i+1)+';grid-row:1">'+ppinBox(f.placed[1],1,i,r.winner===1,r.n1)+'</div>';
-      rowC+='<div class="pcard r'+(i%4)+' '+c.rarity+cls+'" style="grid-column:'+(i+1)+';grid-row:2"><div class="no">客'+(i+1)+'</div>'+custMid(c)+reqs+'<div class="center" style="font-size:12px">'+verdict+'</div></div>';
+      rowC+='<div class="pcard r'+(i%4)+' '+c.rarity+cls+'" style="grid-column:'+(i+1)+';grid-row:2'+(f.removed?';opacity:.55':'')+'"><div class="no">客'+(i+1)+'</div>'+custMid(c)+reqs+'<div class="center" style="font-size:12px">'+verdict+'</div>'+declNote(i)+'</div>';
       rowM+='<div class="lane" style="grid-column:'+(i+1)+';grid-row:3">'+ppinBox(f.placed[0],0,i,r.winner===0,r.n0)+'</div>';
     });
     const market='<div class="tgrid"><div class="clothband" style="grid-row:2"></div>'+rowO+rowC+rowM+'</div>';
     const me=zoneBar(0,false,'<span class="note">獲得 '+state.players[0].acquired.length+'</span>',coinFxHtml(0));
     const fwLine = state.forcedWin ? '<div class="center" style="margin-top:12px"><span class="coin'+(anim?' pop':'')+'" style="font-size:16px">⚡ 強制勝利ライン（'+S.winLine+'コイン）到達 — この判定で決着！</span></div>' : '';
     const btn='<div class="center" style="margin-top:14px"><button class="btn primary big" onclick="EM.nextTurn()">'+(last?'最終結果へ ▶':'次のターンへ ▶')+'</button> <button class="btn ghost" onclick="EM.resetGame()">リセット</button></div>';
-    return head+'<div class="table"><div class="board">'+opp+market+me+'</div></div>'+fwLine+btn;
+    return head+'<div class="table"><div class="board">'+opp+market+me+'</div></div>'+postRevealNote()+judgeWideNote()+betNote()+fwLine+btn;
   }
 
+  function cleanupHandoffScreen(){ const pi=state.cleanOrder[state.cleanStep], nm=pname(pi);
+    return topbar('片付け — '+esc(nm)+' の先読み')
+      +'<div class="center" style="padding:46px 0">'
+      +'<div class="big" style="margin:10px 0">'+esc(nm)+' の片付け</div>'
+      +'<div class="note" style="margin-bottom:22px">相手は画面を見ないでください。<br>◈導きの羅針で「次のターンに自分が出す客」を先に見られます（コイン1・任意）。</div>'
+      +'<button class="btn primary big" onclick="EM.beginCleanTurn()">片付けをはじめる ▶</button></div>'; }
+  function cleanupScreen(){ const pi=state.cleanOrder[state.cleanStep], P=state.players[pi];
+    const head=topbar('片付け — '+esc(pname(pi)));
+    if(state.peekShow){
+      const cards=state.peekShow.map((c,k)=>'<div class="pcard '+c.rarity+'" style="display:inline-block;vertical-align:top;margin:6px;min-width:200px"><div class="no">次ターンの客'+(k+1)+'</div>'+custMid(c)+'<div class="creq">'+c.conditions.map(cd=>'<span class="cchip" data-tip="'+esc(condText(cd))+'">'+condGlyph(cd)+'</span>').join('')+'</div></div>').join('');
+      return head+'<div class="center" style="padding:24px 0"><div class="big" style="margin:8px 0">◈導きの羅針 — '+esc(pname(pi))+' の先読み</div>'
+        +'<div class="note" style="margin-bottom:14px">次のターンに、あなたが場に出す客はこの'+state.peekShow.length+'枚です（覚えておいて仕込みに活かしましょう）。</div>'
+        +'<div>'+cards+'</div>'
+        +'<div class="center" style="margin-top:18px"><button class="btn primary big" onclick="EM.cleanAck()">確認した、次へ ▶</button></div></div>';
+    }
+    const rid=(P.relicHand||[]).find(id=>{ const r=relicDef(id); return r && r.timing==='cleanup' && P.coins>=r.cost; });
+    const r=rid?relicDef(rid):null; const cost=r?heroCost(pi,r):1;
+    return head+'<div class="center" style="padding:36px 0">'
+      +'<div class="big" style="margin:8px 0">'+esc(pname(pi))+'：片付け時</div>'
+      +'<div class="note" style="margin-bottom:20px">◈導きの羅針（'+cost+'コイン）で「次のターンに自分が出す客'+CFG.customersPresentedPerPlayer+'枚」を先に見られます。<br>所持コイン '+P.coins+'。見ておくと、次の仕込み（ピン選び）が有利になります。</div>'
+      +'<button class="btn primary big" onclick="EM.cleanPeek()">見る（'+cost+'コイン）▶</button> '
+      +'<button class="btn big" onclick="EM.cleanSkip()">見ない（次へ）</button></div>'; }
   function gameOverScreen(){
     const c0=state.players[0].coins, c1=state.players[1].coins;
     const fwTag = (state.forcedWin && c0!==c1) ? '（'+S.winLine+'コイン到達・強制勝利）' : '';
@@ -726,18 +1191,23 @@
       +'<div class="title-em" style="margin:8px 0 18px">'+esc(msg)+'</div>'
       +'<div class="panel" style="display:inline-block; text-align:left; min-width:300px">'+lines+'</div>'
       +'<div class="center" style="margin-top:20px"><button class="btn primary" onclick="EM.again()">もう一度（同じ設定）</button> <button class="btn ghost" onclick="EM.toTitle()">タイトルへ</button></div>'
-      +'<div class="note" style="margin-top:14px">※ Phase1はコインが貯まる＝得点のみ。コイン消費（遺物）の駆け引きはPhase2で追加。</div></div>';
+      +'<div class="note" style="margin-top:14px">※ 遺物（Phase 2）：調整中に <b>砂の還流</b>（自分の入替+1）／<b>沈黙の錘</b>（相手の入替-1）、判定直前に <b>満ちる盃</b>（自分の達成+1）／<b>凋落の呪印</b>（相手の達成-1）を伏せて宣言。香炉・忘却ほかは順次追加。</div></div>';
   }
 
   function render(){
     let html;
     if(state===null) html=titleScreen();
     else switch(state.phase){
-      case 'stockHandoff': html=stockHandoffScreen(); break;
-      case 'stock':        html=stockScreen(); break;
-      case 'adjust':       html=adjustScreen(); break;
-      case 'reveal':       html=revealScreen(); break;
-      case 'gameover':     html=gameOverScreen(); break;
+      case 'heroSelect':     html=heroSelectScreen(); break;
+      case 'stockHandoff':   html=stockHandoffScreen(); break;
+      case 'stock':          html=stockScreen(); break;
+      case 'adjust':         html=adjustScreen(); break;
+      case 'declareHandoff': html=declareHandoffScreen(); break;
+      case 'declare':        html=declareScreen(); break;
+      case 'cleanupHandoff': html=cleanupHandoffScreen(); break;
+      case 'cleanup':        html=cleanupScreen(); break;
+      case 'reveal':         html=revealScreen(); break;
+      case 'gameover':       html=gameOverScreen(); break;
       default: html=titleScreen();
     }
     app().innerHTML = html + (legendOpen?legendModal():'') + (resultsOpen?resultsModal():'') + (settingsOpen?settingsModal():'') + (howtoOpen?howtoModal():'');
@@ -769,6 +1239,45 @@
     add('入れ替えで勝敗が変わる', (function(){ const cA={vp:1,conditions:[{axis:'motif',op:'==',value:'animal'}]}; return countSatisfied(pinB,cA)===0 && countSatisfied(pinA,cA)===1; })());
     add('全アイコン定義あり', MOTIFS.every(m=>ICON.motif[m]) && TRANSP.every(x=>ICON.transparency[x]) && SHAPES.every(x=>ICON.shape[x]));
     add('matchInfo 合致/不一致を判定', (function(){ const mi=matchInfo(pinA,{conditions:cX.conditions}); return mi.green.has('motif') && mi.green.has('size_mm') && mi.red.has('living'); })());
+    add('遺物 砂の還流：自分の入替 +1', (function(){ const st={changesLeft:[2,2]}; applyRelic(st,0,{effect:'plusSwapSelf'}); return st.changesLeft[0]===3 && st.changesLeft[1]===2; })());
+    add('遺物 沈黙の錘：相手の入替 -1（0未満にならない）', (function(){ const st={changesLeft:[2,1]}; applyRelic(st,0,{effect:'minusSwapOpp'}); applyRelic(st,0,{effect:'minusSwapOpp'}); return st.changesLeft[1]===0; })());
+    add('遺物データ：cost/effect 定義あり', (D.RELIC_POOL||[]).length>0 && D.RELIC_POOL.every(r=>typeof r.cost==='number' && !!r.effect));
+    // --- 判定直前の遺物（盃/呪印）：judgeCustomer の条件数補正 ---
+    const pinC={size_mm:20,transparency:'opaque',hasText:false,count:'single',living:false,motif:'animal',shape:'circle',symmetry:true};
+    const tieJ={vp:2,conditions:[{axis:'motif',op:'==',value:'object'}]};            // pinA・pinB とも不一致＝同点
+    const cReq2={vp:1,conditions:[{axis:'motif',op:'==',value:'animal'},{axis:'living',op:'==',value:true}]}; // pinA=2満たす/pinC=1満たす
+    add('遺物 満ちる盃：同点→自分(+1)が勝ち', judgeCustomer(pinA,pinB,tieJ,{tiebreak:'split'},1,0).winner===0);
+    add('遺物 凋落の呪印：同点→相手(-1)で自分が勝ち', judgeCustomer(pinA,pinB,tieJ,{tiebreak:'split'},0,-1).winner===0);
+    add('遺物 盃：1差負け→盃(+1)で同点(split)に戻す', judgeCustomer(pinC,pinA,cReq2,{tiebreak:'split'},1,0).winner==='split' && judgeCustomer(pinC,pinA,cReq2,{tiebreak:'split'}).winner===1);
+    add('遺物 判定補正：補正0なら従来と同一', judgeCustomer(pinA,pinB,cX,{tiebreak:'none'},0,0).winner===judgeCustomer(pinA,pinB,cX,{tiebreak:'none'}).winner);
+    add('遺物 判定補正：両者空は補正でも流れ', judgeCustomer(null,null,cX,{tiebreak:'split'},1,0).winner===null);
+    add('遺物データ：満ちる盃/凋落の呪印が定義済み(コスト2・declare)', (function(){ const s=(D.RELIC_POOL||[]).find(r=>r.id==='rel_sakazuki'), j=(D.RELIC_POOL||[]).find(r=>r.id==='rel_juin'); return !!s&&!!j&&s.cost===2&&j.cost===2&&s.timing==='declare'&&j.timing==='declare'&&s.effect==='plusJudgeSelf'&&j.effect==='minusJudgeOpp'&&s.target==='selfSlot'&&j.target==='oppSlot'; })());
+    add('遺物 宣言の対象：盃=自分側+1／呪印=相手側-1', (function(){ const a=relicJudgeDelta('plusJudgeSelf',0), b=relicJudgeDelta('plusJudgeSelf',1), c=relicJudgeDelta('minusJudgeOpp',0), d=relicJudgeDelta('minusJudgeOpp',1); return a.p===0&&a.d===1 && b.p===1&&b.d===1 && c.p===1&&c.d===-1 && d.p===0&&d.d===-1; })());
+    // --- 公開直後の遺物（誘いの香）：客の入れ替え ---
+    add('遺物 誘いの香：客2人の位置を入れ替える', (function(){ var st={field:[{customer:{id:'A'}},{customer:{id:'B'}},{customer:{id:'C'}}]}; applyDeclaredRelic(st,0,{slot:0,slot2:2},{effect:'swapCustomers'}); return st.field[0].customer.id==='C' && st.field[2].customer.id==='A' && st.field[1].customer.id==='B'; })());
+    add('遺物 効果適用：盃の補正が judgeDelta に乗る', (function(){ var st={judgeDelta:[[0,0],[0,0]]}; applyDeclaredRelic(st,0,{slot:1},{effect:'plusJudgeSelf'}); return st.judgeDelta[1][0]===1 && st.judgeDelta[1][1]===0; })());
+    add('遺物データ：誘いの香が定義済み(コスト1・postReveal・cust2)', (function(){ var k=(D.RELIC_POOL||[]).find(function(r){return r.id==='rel_kaori';}); return !!k && k.cost===1 && k.timing==='postReveal' && k.target==='cust2' && k.effect==='swapCustomers'; })());
+    add('遺物 忘却の髑髏：客を除外（removed=true）', (function(){ var st={field:[{customer:{id:'A'}},{customer:{id:'B'}}]}; applyDeclaredRelic(st,0,{slot:1},{effect:'removeCustomer'}); return st.field[1].removed===true && !st.field[0].removed; })());
+    add('遺物データ：忘却の髑髏が定義済み(コスト2・postReveal・custSlot・removeCustomer)', (function(){ var k=(D.RELIC_POOL||[]).find(function(r){return r.id==='rel_dokuro';}); return !!k && k.cost===2 && k.timing==='postReveal' && k.target==='custSlot' && k.effect==='removeCustomer'; })());
+    add('遺物 黄金の酒宴：自分の全ピンに判定+1', (function(){ var st={judgeDelta:[[0,0],[0,0],[0,0]]}; applyDeclaredRelic(st,0,{},{effect:'plusJudgeAllSelf'}); return st.judgeDelta[0][0]===1 && st.judgeDelta[1][0]===1 && st.judgeDelta[2][0]===1 && st.judgeDelta[0][1]===0; })());
+    add('遺物データ：黄金の酒宴が定義済み(コスト4・declare・allSelf・plusJudgeAllSelf)', (function(){ var k=(D.RELIC_POOL||[]).find(function(r){return r.id==='rel_utage';}); return !!k && k.cost===4 && k.timing==='declare' && k.target==='allSelf' && k.effect==='plusJudgeAllSelf'; })());
+    add('遺物 不動の楔：保護客は除外も入替もされない', (function(){ var st={field:[{customer:{id:'A'}},{customer:{id:'B'}}]}; applyDeclaredRelic(st,0,{slot:0},{effect:'lockCustomer'}); applyDeclaredRelic(st,1,{slot:0},{effect:'removeCustomer'}); applyDeclaredRelic(st,1,{slot:0,slot2:1},{effect:'swapCustomers'}); return st.field[0].locked===true && !st.field[0].removed && st.field[0].customer.id==='A' && st.field[1].customer.id==='B'; })());
+    add('遺物 偽相の仮面：満たせる絵柄条件の数だけ判定+1', (function(){ var pinO={size_mm:20,transparency:'opaque',hasText:false,count:'single',living:false,motif:'object',shape:'circle',symmetry:true}; var cust={conditions:[{axis:'motif',op:'==',value:'animal'},{axis:'size_mm',op:'>=',value:10}]}; var st={judgeDelta:[[0,0]], field:[{customer:cust, placed:[pinO,null]}]}; applyDeclaredRelic(st,0,{slot:0},{effect:'maskMotifSelf'}); return st.judgeDelta[0][0]===1; })());
+    add('遺物データ：不動の楔/偽相の仮面が定義済み', (function(){ var ku=(D.RELIC_POOL||[]).find(function(r){return r.id==='rel_kusabi';}), me=(D.RELIC_POOL||[]).find(function(r){return r.id==='rel_men';}); return !!ku&&!!me && ku.cost===1&&ku.timing==='postReveal'&&ku.target==='custSlot'&&ku.effect==='lockCustomer' && me.cost===2&&me.timing==='declare'&&me.target==='selfSlot'&&me.effect==='maskMotifSelf'; })());
+    // --- 調整中の遺物（運命の賽）：賭けの宣言と精算 ---
+    add('遺物 運命の賽：賭けフラグが立つ', (function(){ var st={bet:[false,false]}; applyRelic(st,0,{effect:'betWin'}); return st.bet[0]===true && st.bet[1]===false; })());
+    add('遺物 運命の賽：精算は2人以上で+3／1人以下0', betPayoff(0)===0 && betPayoff(1)===0 && betPayoff(2)===3 && betPayoff(3)===3);
+    add('遺物データ：運命の賽が定義済み(コスト1・adjust・betWin)', (function(){ var k=(D.RELIC_POOL||[]).find(function(r){return r.id==='rel_sai';}); return !!k && k.cost===1 && k.timing==='adjust' && k.effect==='betWin' && k.consumesTurn===false; })());
+    // --- 片付け時の遺物（導きの羅針）と正本プリセット ---
+    add('遺物データ：導きの羅針が定義済み(コスト1・cleanup・peekNext)', (function(){ var k=(D.RELIC_POOL||[]).find(function(r){return r.id==='rel_rashin';}); return !!k && k.cost===1 && k.timing==='cleanup' && k.effect==='peekNext'; })());
+    add('遺物データ：正本プリセットは10種各1（賽・羅針を含み酒宴を除く）', (function(){ var p=D.PRESET_RELICS||[]; if(p.length!==10) return false; var u={}; p.forEach(function(id){u[id]=(u[id]||0)+1;}); var ids=Object.keys(u); return ids.length===10 && ids.every(function(id){return u[id]===1;}) && u['rel_sai']===1 && u['rel_rashin']===1 && !u['rel_utage']; })());
+    // --- 主人公（Phase3・パッシブ）---
+    add('主人公データ：12人・schema(id/desire/name/normal.kind/text)', (function(){ var H=D.HERO_POOL||[]; return H.length===12 && H.every(function(h){ return h.id&&h.desire&&h.name&&h.normal&&h.normal.kind&&h.normal.text; }); })());
+    add('主人公データ：金銭+2/食欲C上限/物欲流れ/闘争差2 が定義済み', (function(){ var f=function(id){return (D.HERO_POOL||[]).find(function(h){return h.id===id;});}; var k=f('hero_kinsen'),s=f('hero_shokuyoku'),b=f('hero_butsuyoku'),t=f('hero_toso'); return !!k&&!!s&&!!b&&!!t && k.normal.kind==='startCoins'&&k.normal.n===2 && s.normal.kind==='gainOnAcquireRarity'&&s.normal.rarity==='C'&&s.normal.perTurn===1&&s.normal.perGame===4 && b.normal.kind==='gainOnFlow'&&b.normal.perTurn===1 && t.normal.kind==='gainOnDominate'&&t.normal.margin===2&&t.normal.perTurn===2; })());
+    add('主人公データ：不朽/自由(陳列②)/王権/性欲のkind', (function(){ var f=function(id){return (D.HERO_POOL||[]).find(function(h){return h.id===id;});}; return f('hero_fukyu').normal.kind==='immuneToMinus' && f('hero_jiyu').normal.kind==='wildMotifSlot' && f('hero_jiyu').normal.slot===1 && f('hero_ouken').normal.kind==='claimFirstFlow' && f('hero_seiyoku').normal.kind==='stealOnOppHighVp' && f('hero_seiyoku').normal.perGame===3; })());
+    add('主人公 不朽：呪印の−1が不朽のピンに効かない（通常ピンには効く）', (function(){ var im={judgeDelta:[[0,0]], players:[{},{hero:{normal:{kind:'immuneToMinus'}}}]}; applyDeclaredRelic(im,0,{slot:0},{effect:'minusJudgeOpp'}); var no={judgeDelta:[[0,0]], players:[{},{}]}; applyDeclaredRelic(no,0,{slot:0},{effect:'minusJudgeOpp'}); return im.judgeDelta[0][1]===0 && no.judgeDelta[0][1]===-1; })());
+    add('主人公データ：無欲/知識/睡眠/遊興のkind', (function(){ var f=function(id){return (D.HERO_POOL||[]).find(function(h){return h.id===id;});}; return f('hero_muyoku').normal.kind==='relicCostDown'&&f('hero_muyoku').normal.min===1 && f('hero_chishiki').normal.kind==='peekOwnThisTurn' && f('hero_suimin').normal.kind==='chooseSecond' && f('hero_yukyo').normal.kind==='betRefundPlus'; })());
+    add('主人公データ：全12人のkindがHERO_POOLに揃う', (D.HERO_POOL||[]).length===12);
     const errs=validateData(D);
     add('validateData：仮データにエラー0件'+(errs.length?'（'+errs.length+'件）':''), errs.length===0);
     return {t,errs};
@@ -783,8 +1292,32 @@
   }
 
   /* ---------- 公開API ---------- */
-  window.EM={ startMatch:(mode)=>{newGame(mode||'hotseat');}, again:()=>{newGame(lastMode);}, beginStock, selectStockPin, stockPlaceAt, stockRemoveAt, stockReset, stockConfirm,
-    selectAdjSlot, adjPass, undoAdj, cancelSel:()=>{state.adjSel=null;render();}, nextTurn, resetGame, toTitle:()=>{state=null;legendOpen=false;render();},
+  window.EM={ startMatch:(mode)=>{newGame(mode||'hotseat');}, again:()=>{newGame(lastMode);},
+    pickHero:(id)=>{ const pi=state.heroPick; if(pi==null) return; state.players[pi].hero=(D.HERO_POOL||[]).find(h=>h.id===id)||null; const nx=nextHeroPicker(pi+1); if(nx==null){ finalizeHeroes(); } else { state.heroPick=nx; render(); } },
+    beginStock, selectStockPin, stockPlaceAt, stockRemoveAt, stockReset, stockConfirm,
+    selectAdjSlot, adjPass, undoAdj, useRelic, cancelSel:()=>{state.adjSel=null;render();}, nextTurn, resetGame, toTitle:()=>{state=null;legendOpen=false;render();},
+    beginDeclareTurn:()=>{ state.phase='declare'; state.declSel=null; render(); },
+    declareSelectRelic:(rid)=>{ const cur=state.declSel&&state.declSel.relic===rid; state.declSel = cur?null:{relic:rid,slot:null,slot2:null}; render(); },
+    declareSelectSlot:(i)=>{ const s=state.declSel; if(!s||!s.relic) return; const r=relicDef(s.relic);
+      if(r&&r.target==='cust2'){                                  // 客2人（入れ替え）：2枚まで選ぶ
+        if(s.slot===i){ s.slot=s.slot2; s.slot2=null; }           // 1人目を外す（2人目を繰上げ）
+        else if(s.slot2===i){ s.slot2=null; }                     // 2人目を外す
+        else if(s.slot==null){ s.slot=i; }
+        else if(s.slot2==null){ s.slot2=i; }                      // 2人目を選ぶ（3枚目以降は無視）
+      } else { s.slot=(s.slot===i)?null:i; }                      // 単一選択（盃/呪印/忘却）：トグル
+      render(); },
+    declareCancel:()=>{ state.declSel=null; render(); },
+    declarePass:()=>{ const pi=state.declOrder[state.declStep]; state.declarations[pi]=null; state.declStep++; state.declSel=null; declAdvance(); },
+    declareConfirm:()=>{ const pi=state.declOrder[state.declStep], s=state.declSel; if(!s||!s.relic) return; const r=relicDef(s.relic); if(!r||state.players[pi].coins<heroCost(pi,r)) return;
+      const need=(r.target==='cust2')?2:(r.target==='allSelf')?0:1, have=(s.slot==null)?0:((s.slot2==null)?1:2); if(have!==need) return;
+      state.declarations[pi]={relic:s.relic, slot:s.slot, slot2:s.slot2}; state.declStep++; state.declSel=null; declAdvance(); },
+    beginCleanTurn:()=>{ state.phase='cleanup'; render(); },
+    cleanPeek:()=>{ const pi=state.cleanOrder[state.cleanStep], P=state.players[pi];
+      const rid=(P.relicHand||[]).find(id=>{ const r=relicDef(id); return r && r.timing==='cleanup' && P.coins>=heroCost(pi,r); }); if(!rid) return;
+      const r=relicDef(rid); P.coins-=heroCost(pi,r); const k=P.relicHand.indexOf(rid); if(k>=0) P.relicHand.splice(k,1);   // 支払い（無欲はコスト−1）＝最終得点が減る
+      state.peekShow=(P.customerDeck||[]).slice(0,CFG.customersPresentedPerPlayer); render(); },             // 次ターンに自分が出す客＝customerDeck の先頭2枚
+    cleanSkip:()=>{ state.cleanStep++; state.peekShow=null; cleanAdvance(); },
+    cleanAck:()=>{ state.peekShow=null; state.cleanStep++; cleanAdvance(); },
     toggleLegend:()=>{legendOpen=!legendOpen;render();},
     toggleResults:()=>{resultsOpen=!resultsOpen;render();},
     exportResults:()=>{ const t=resultsTSV(); if(navigator.clipboard&&navigator.clipboard.writeText){ navigator.clipboard.writeText(t).then(()=>alert('記録をコピーしました（表計算ソフトに貼り付けできます）'),()=>window.prompt('コピーしてください',t)); } else window.prompt('コピーしてください',t); },
@@ -797,7 +1330,7 @@
     openHowto:()=>{ howtoOpen=true; render(); },
     closeHowto:()=>{ howtoOpen=false; try{localStorage.setItem('em_seen_howto','1');}catch(e){} render(); } };
   // テスト用：本物のエンジンを外部から使えるように公開（ゲーム挙動には影響しない）
-  window.EM_DEBUG={ satisfies, countSatisfied, judgeCustomer, matchInfo, instPins, instCustomers, shuffle, mulberry32, CFG, DATA:D };
+  window.EM_DEBUG={ satisfies, countSatisfied, judgeCustomer, applyRelic, relicJudgeDelta, betPayoff, getState:()=>state, matchInfo, instPins, instCustomers, shuffle, mulberry32, CFG, DATA:D };
 
   /* ---------- ツールチップ（マウスオーバー詳細） ---------- */
   const tipEl=document.createElement('div'); tipEl.className='tip'; document.body.appendChild(tipEl);
